@@ -16,10 +16,6 @@ from utils.constants import ITERATIONS
 from utils.constants import CV
 from utils.constants import AUG
 from utils.constants import RANDOM_AUG_PARAMETERS
-from utils.constants import RANDOM_AUG_DIAGONAL
-from utils.constants import RANDOM_AUG_DOWN
-from utils.constants import RANDOM_AUG_RIGHT
-from utils.constants import RANDOM_AUG_EACH
 from utils.constants import PRA_N
 from utils.constants import PER_N
 from utils.constants import PER_PROB
@@ -269,10 +265,7 @@ def main():
                         for aug in AUG:                              
                             
                             if aug=='Random':
-                                # for diagonal in RANDOM_AUG_DIAGONAL:
-                                #     for down in RANDOM_AUG_DOWN:
-                                #         for right in RANDOM_AUG_RIGHT:
-                                #             for each in RANDOM_AUG_EACH:
+                                
                                 for parameters in RANDOM_AUG_PARAMETERS:
                                       
                                       diagonal = parameters[0]
@@ -402,12 +395,15 @@ def main():
                         for aug in AUG:                              
                             
                             if aug=='Random':
-                                for diagonal in RANDOM_AUG_DIAGONAL:
-                                    for down in RANDOM_AUG_DOWN:
-                                        for right in RANDOM_AUG_RIGHT:
-                                            for each in RANDOM_AUG_EACH:
-                                                augmentator= RandomAug.RandomAug(diagonal,down,right,each)
-                                                augmentator_name = aug+'_diag'+str(diagonal)+'_down'+str(down)+'_right'+str(right)+'_each'+str(int(each))
+                                for parameters in RANDOM_AUG_PARAMETERS:
+                                      
+                                      diagonal = parameters[0]
+                                      down = parameters[1]
+                                      right = parameters[2]
+                                      each = parameters[3]
+                                      augmentator = RandomAug.RandomAug(diagonal,down,right,each)
+                                      augmentator_name = aug+'_diag'+str(diagonal)+'_down'+str(down)+'_right'+str(right)+'_each'+str(int(each))
+                                      
                             if aug=='PRA':
                                 for n in PRA_N:
                                     augmentator=PartlyRandomAug.PartlyRandomAug(n)
