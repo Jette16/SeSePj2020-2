@@ -3,10 +3,10 @@ import numpy as np
 import pandas as pd
 import matplotlib
 import shutil
-
+from datetime import datetime
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-
+from openpyxl.styles import  PatternFill, Font
 matplotlib.rcParams['font.family'] = 'sans-serif'
 matplotlib.rcParams['font.sans-serif'] = 'Arial'
 import os
@@ -19,24 +19,250 @@ from utils.constants import UNIVARIATE_DATASET_NAMES_2018 as DATASET_NAMES_2018
 from utils.constants import ARCHIVE_NAMES  as ARCHIVE_NAMES
 from utils.constants import CLASSIFIERS
 from utils.constants import ITERATIONS
+from utils.constants import ROOT_DIR
 from utils.constants import MTS_DATASET_NAMES
 
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 
+from openpyxl import load_workbook
+from openpyxl import Workbook
+
 
 from scipy.interpolate import interp1d
 from scipy.io import loadmat
+
+
+
+def color_the_best_metric(excelfile,sheetname,best_metrics):
+    wb = load_workbook(excelfile)
+    ws = wb[sheetname]
+   
+    ## Create a dictionary of column names
+    ColNames = {}
+    Current  = 0
+    for COL in ws.iter_cols(1, ws.max_column):
+        ColNames[COL[0].value] = Current
+        Current += 1
+
+    ## Now you can access by column name
+    for row_cells in ws.iter_rows(min_row=2, max_row=ws.max_row):
+        for columnname in best_metrics.keys():
+            for maxmetric in best_metrics.values():
+                if type(row_cells[ColNames[columnname]].value) is str:
+                    if (float(row_cells[ColNames[columnname]].value.split('(')[0])==maxmetric):
+                        #print(row_cells[ColNames[columnname]])
+                        row_cells[ColNames[columnname]].fill = PatternFill("solid", fgColor="DDDDDD")
+                        row_cells[ColNames[columnname]].font = Font(b=True)
+                        #print(row_cells[ColNames[columnname]].fill)
+    wb.save(excelfile)
+            
+def copy_excel(source,target):
+    wb = load_workbook(source)
+    wb.save(target)
+    
+def copy_eval_results_and_check_best_models():
+    #copy the evaluation results
+    source=ROOT_DIR+'/results/results.xlsx'
+    now = datetime.now()
+    dt_string = now.strftime("%Y-%m-%d-%H-%M")
+    target=source[:-5]+'_Copy'+dt_string +'.xlsx'
+    
+    copy_excel(source,target)
+    
+    #check best models and color the best metrics
+    best_metrics={}
+    datasets=DATASET_NAMES_2018
+   
+    
+    df1=pd.read_excel(target,'results')
+    
+    
+    for d in datasets:
+        col=df1[d]
+        metrics=[]
+        for metric in col:
+            if type(metric) is str:
+                metric0=float(metric.split('(')[0])
+                metrics.append(metric0)
+        #print(metrics)
+        best_metrics.update({d:max(metrics)})
+    
+    #print(best_metrics )   
+       
+    color_the_best_metric(target,'results',best_metrics )
+        
+    
+
+def check_best_models():
+    best_models=[]
+    metrics1=['precision@k=1','recall@k=1','f1@k=1','precision@k=3','recall@k=3','f1@k=3','precision@k=6','recall@k=6','f1@k=6',]
+    metrics2=['cv_f1','precision','recall','f1']
+    df1=pd.read_excel(ROOT_DIR+'/'+EXCELFILE,SHEETNAME1)
+    df2=pd.read_excel(ROOT_DIR+'/'+EXCELFILE,SHEETNAME3)
+    for m in metrics1:
+        idxmax=df1[m].idxmax()
+        modelname = df1['modelName'][idxmax]
+        best_models.append(modelname)
+    for m in metrics2:
+        idxmax=df2[m].idxmax()
+        modelname = df2['modelName'][idxmax]
+        best_models.append(modelname)
+    best_model_dict=pd.DataFrame(best_models, columns=["name"]).groupby('name').size().to_dict()
+    
+    print('Current best models are: ',best_model_dict)
+    return best_model_dict
+
+def delete_not_best_models(best_model_dict, DIRS):
+    best_models = best_model_dict.keys()
+    for a_dir in DIRS:
+        subdirs = [name for name in os.listdir(a_dir)
+            if os.path.isdir(os.path.join(a_dir, name))]
+        for subdir in subdirs:
+            if subdir not in best_models:
+                files=os.listdir(a_dir+'/'+subdir)
+                for file in files:
+                    if not file.endswith('.csv'):
+                        os.remove(a_dir+'/'+subdir+'/'+file)
+                        print('MODEL '+subdir+' removed!')   
+    
+###########
+def generate_results_overview():
+    df_cols=['approach','classifier','augmentation',
+             'Adiac', 'ArrowHead', 'Beef','BeetleFly', 'BirdChicken','Car','CBF','ChlorineConcentration','CinCECGTorso','Coffee']
+    rows=[]
+    dfs=[]
+    result = {'approach':None,'classifier': None,'augmentation':None,
+              'Adiac': None,  'ArrowHead': None, 'Beef': None, 
+              'BeetleFly': None,  'BirdChicken': None, 'Car': None, 
+              'CBF': None, 'ChlorineConcentration': None, 'CinCECGTorso': None,'Coffee': None }
+    
+    cls_dirs= [d for d in os.listdir(ROOT_DIR+'/results') if os.path.isdir(ROOT_DIR+'/results/'+d)]
+    
+    #print(cls_dirs)
+    
+    for cls_dir in cls_dirs:
+        
+        
+        result['classifier']=cls_dir
+        
+        dir0 = ROOT_DIR+'/results/'+cls_dir
+        #print (result)
+        
+        appr_dirs  = [d for d in os.listdir(dir0) if os.path.isdir(dir0+'/'+d)]
+        
+        
+        for appr_dir in appr_dirs:
+            
+            result['approach']=appr_dir
+            
+            dir0=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir
+            
+            aug_dirs  = [d for d in os.listdir(dir0) if os.path.isdir(dir0+'/'+d)]
+            
+            #data_dirs  = [d for d in os.listdir(dir0) if os.path.isdir(dir0+'/'+d)]
+            
+            #print (result)
+            
+            for aug_dir in aug_dirs:
+                
+                result['augmentation']=aug_dir
+                
+                dir0=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir+'/'+aug_dir
+                
+                data_dirs  = [d for d in os.listdir(dir0) if os.path.isdir(dir0+'/'+d)]
+                
+                
+                #print(aug_dirs)
+                
+                for data_dir in data_dirs:
+                    
+                     
+                     
+                     dir0=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir+'/'+aug_dir+'/'+data_dir
+                     
+                     sub_dirs = [d for d in os.listdir(dir0) if os.path.isdir(dir0+'/'+d)]
+                     
+                     #print (sub_dirs )
+                     
+                
+                     
+                     res=[]
+                     
+                     if 'DONE' in sub_dirs:
+                         for sub_dir in sub_dirs:
+                             dir0=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir+'/'+aug_dir+'/'+data_dir+'/'+sub_dir
+                             if not sub_dir=='DONE': 
+                                 #print (result)
+                                 
+                                 if os.path.isfile(dir0+'/df_metrics.csv'):
+                                     df=pd.read_csv(dir0+'/df_metrics.csv')
+                                     
+                                     acc = df['accuracy'][0]
+                                     
+                                     res.append(acc)
+                     else:
+                         print('Training not finished',dir0)
+                         
+                     #print(len(res))
+                     res=np.array(res)
+                     mean=round(np.mean(res)*100,1)
+                     std=round(np.std(res)*100,1)
+            
+                     result[data_dir]=str(mean)+'('+str(std)+')'
+                    
+                #print ('result',result)
+                rows.append(result)
+                df = pd.DataFrame(rows, columns = df_cols)                
+                dfs.append(df)
+                rows=[]
+               
+   
+    df = pd.concat(dfs)
+    
+    append_eval_results_to_excel(ROOT_DIR+'/results/'+'results.xlsx', 'results', df)
+
+def append_eval_results_to_excel(excelfile,sheetname,df):
+    print('Saving the evaluation results...')
+    
+    if not os.path.isfile(excelfile):
+        print('The excel file is not existing, creating a new excel file...'+excelfile)       
+        wb = Workbook()
+        wb.save(excelfile)
+        
+        
+    wb = load_workbook(excelfile)
+    if not (sheetname in wb.sheetnames):
+        print('The worksheet is not existing, creating a new worksheet...'+sheetname) 
+        ws1 = wb.create_sheet(sheetname)
+        ws1.title = sheetname
+        wb.save(excelfile)
+    
+            
+    book = load_workbook(excelfile)
+    writer = pd.ExcelWriter(excelfile, engine='openpyxl')
+    writer.book = book
+    writer.sheets = {ws.title: ws for ws in book.worksheets}
+    #startRow=writer.sheets[sheetname].max_row
+    
+    
+    df.to_excel(writer,sheet_name=sheetname, index = False,header= True)
+        
+   
+        
+
+    writer.save()
 
 def check_dir(dir):
     done=dir+'/DONE'
     if os.path.isdir(dir):
         if os.path.isdir(done):
-            print ('Model already exisits: ',dir)
+            
+            print ('Model already exisits: ',dir[len(ROOT_DIR):])
             return True
     else:
-        print('Model not exisits: ',dir)            
+        #print('Model not exisits: ',dir)            
         return False
 def readucr(filename):
     data = np.loadtxt(filename, delimiter=',')

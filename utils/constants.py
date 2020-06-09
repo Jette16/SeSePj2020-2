@@ -15,24 +15,22 @@ ITERATIONS = 4  # nb of random runs for random initializations
 CV = 4   # k-fold cross validation
 
 #augmentation methods
-AUG = ['Random']#, 'PRA','Per']
+AUG = ['Random']#'PRA','Per'
 #parameters for RandomAug
-RANDOM_AUG_DIAGONAL=[0.5]
-RANDOM_AUG_DOWN=[0.25]
-RANDOM_AUG_RIGHT=[0.25]
-RANDOM_AUG_EACH=[True]
+RANDOM_AUG_PARAMETERS=[[0.5,0.25,0.25,True]]
+
 
 #parameters for PartlyRandomAug
-PRA_N=[5]
+PRA_N=[1]
 
 #parameters for PermutationAug
-PER_N=[5]
+PER_N=[1]
 PER_PROB=[0.5]
 
 
 #parameters for time series classification
-CLASSIFIERS = ['cnn'] #'resnet', 'encoder', 'fcn', 'mlp',  'tlenet', 'mcnn', 'twiesn',  'mcdcnn', 'inception']
-CLS_EPOCHS = 2
+CLASSIFIERS = ['cnn'] #'cnn','resnet', 'encoder', 'fcn', 'mlp',  'tlenet', 'mcnn', 'twiesn',  'mcdcnn', 'inception']
+CLS_EPOCHS = {'cnn':2000,'fcn':2000,'encoder':100,'resnet':1500}
 
 #not related to our project
 MTS_DATASET_NAMES = ['ArabicDigits', 'AUSLAN', 'CharacterTrajectories', 'CMUsubject16', 'ECG',
