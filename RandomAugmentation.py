@@ -6,14 +6,15 @@ import numpy as np
 # augment_each - specifies if each sequence should be augmented seperatly
 
 class RandomAugmentation:
-    def __init__(self, diagonal=0.50, down=0.25, right=0.25, augment_each=True):
+    def __init__(self, n=1, diagonal=0.50, down=0.25, right=0.25, augment_each=True):
+        self.n = n
         self.diagonal = diagonal
         self.down = down
         self.right = right
         if self.diagonal+self.down+self.right != 1:
             raise Exception("Probabilities don't add up to 1")
         self.augment_each = augment_each
-        self.config={"name":"RandomAugmentation", "diagonal":diagonal, "right":right, "augment_each":augment_each}
+        self.config={"name":"RandomAugmentation","n": n, "diagonal":diagonal, "right":right, "augment_each":augment_each}
 
     def random_w_and_v(self,n,m,diagonal=0.50,down=0.25,right=0.25):
         W=np.zeros((n,m))
@@ -47,21 +48,24 @@ class RandomAugmentation:
     #geenreate random data augmentation
     def augment(self, data_X, data_Y):
         if self.augment_each:
-            augmented_data_X=np.zeros((data_X.shape[0]*2,data_X.shape[1]))
-            augmented_data_Y=np.zeros((data_Y.shape[0]*2))
-            augmented_data_X[data_X.shape[0]:]= data_X
-            augmented_data_Y[data_Y.shape[0]:]= data_Y
-            for i in range(data_X.shape[0]):
+            augmented_data_X=np.zeros((data_X.shape[0]*(self.n+1),data_X.shape[1]))
+            augmented_data_Y=np.zeros((data_Y.shape[0]*(self.n+1)))
+            augmented_data_X[data_X.shape[0]*self.n:]= data_X
+            augmented_data_Y[data_Y.shape[0]*self.n:]= data_Y
+            for i in range(data_X.shape[0]*self.n):
                 W,V =self.random_w_and_v(data_X.shape[-1], data_X.shape[-1])
-                augmented_data_X[i]= np.linalg.inv(V).dot(W).dot(data_X[i])
-                augmented_data_Y[i]= data_Y[i]
+                augmented_data_X[i]= np.linalg.inv(V).dot(W).dot(data_X[i%data_X.shape[0]])
+                augmented_data_Y[i]= data_Y[i%data_X.shape[0]]
             return augmented_data_X, augmented_data_Y 
         else:
-            W,V = self.random_w_and_v(data_X.shape[-1], data_X.shape[-1])
-            augmented_data_X= np.linalg.inv(V).dot(W).dot(data_X.T).T
-            augmented_data_X= np.vstack((augmented_data_X, data_X))
-            data_Y= np.hstack((data_Y, data_Y))
-            return augmented_data_X, data_Y
+            augmented_data_X = np.copy(data_X)
+            augmented_data_Y = np.copy(data_Y)
+            for i in range(self.n):
+                W,V = self.random_w_and_v(data_X.shape[-1], data_X.shape[-1])
+                augmented_tmp_X= np.linalg.inv(V).dot(W).dot(data_X.T).T
+                augmented_data_X= np.vstack((augmented_tmp_X,augmented_data_X))
+                augmented_data_Y= np.hstack((data_Y,augmented_data_Y))
+            return augmented_data_X, augmented_data_Y
         
     def get_config(self):
         return self.config
@@ -109,17 +113,41 @@ def test():
         return data_X, data_Y, data_explanation["Name"][ID]
     
     
-    augment= RandomAugmentation(0.50,0.25,0.25,augment_each=True)
+    augment= RandomAugmentation(1, 0.50,0.25,0.25,augment_each=True)
     X, y, name = load_data(1)
+    print(X.shape)
+    print(y.mean())
     X1, y1 = augment.augment(X,y)
     print(X1.shape)
+    print((X1.sum(axis=1)==0).sum())
     print(y1.shape)
+    print(y1.mean())
 
-    augment= RandomAugmentation(0.50,0.25,0.25,augment_each=False)
+    augment= RandomAugmentation(1, 0.50,0.25,0.25,augment_each=False)
     X, y, name = load_data(1)
     X2, y2 = augment.augment(X,y)
     print(X2.shape)
+    print((X2.sum(axis=1)==0).sum())
     print(y2.shape)
+    print(y2.mean())
+    
+    augment= RandomAugmentation(5, 0.50,0.25,0.25,augment_each=True)
+    X, y, name = load_data(1)
+    print(X.shape)
+    print(y.shape)
+    X1, y1 = augment.augment(X,y)
+    print((X1.sum(axis=1)==0).sum())
+    print(X1.shape)
+    print(y1.shape)
+    print(y1.mean())
+
+    augment= RandomAugmentation(5, 0.50,0.25,0.25,augment_each=False)
+    X, y, name = load_data(1)
+    X2, y2 = augment.augment(X,y)
+    print(X2.shape)
+    print((X2.sum(axis=1)==0).sum())
+    print(y2.shape)
+    print(y2.mean())
     
     #print("amount of equal sequences")
     #print((X1[781:]==X2[781:]).sum()/176)
