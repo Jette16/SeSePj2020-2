@@ -29,7 +29,7 @@ PER_PROB=[0.5]
 
 
 #parameters for time series classification
-CLASSIFIERS = ['cnn'] #'cnn','resnet', 'encoder', 'fcn', 'mlp',  'tlenet', 'mcnn', 'twiesn',  'mcdcnn', 'inception']
+CLASSIFIERS = ['resnet'] #'cnn','resnet', 'encoder', 'fcn', 'mlp',  'tlenet', 'mcnn', 'twiesn',  'mcdcnn', 'inception']
 CLS_EPOCHS = {'cnn':2000,'fcn':2000,'encoder':100,'resnet':1500}
 
 #not related to our project
