@@ -224,6 +224,8 @@ def main():
     if args.approach == 1:
         print('Conduct evaluation using approach 1.')
         
+        epochs=''
+        
         if args.iter is not None:
             
             iterations = args.iter 
@@ -245,7 +247,7 @@ def main():
                     
                     ARCHIVE_NAME=ARCHIVE_NAMES[0]
                     #print('\tarchive_name', ARCHIVE_NAME)
-                    if epochs is None:
+                    if epochs =='':
                         epochs = CLS_EPOCHS[classifier_name]
                     print('\tclassifier_name', classifier_name + '_ep'+str(epochs))
                         
@@ -352,7 +354,7 @@ def main():
                                     
     if args.approach == 2:
         print('Conduct evaluation using approach 2.')
-        
+        epochs=''
         if args.cv is not None:
             
             cv = args.cv
@@ -374,7 +376,7 @@ def main():
                    
                     ARCHIVE_NAME=ARCHIVE_NAMES[0] 
                     
-                    if epochs is None:
+                    if epochs =='':
                         epochs = CLS_EPOCHS[classifier_name]
                         
                     print('\tclassifier_name', classifier_name + '_ep'+str(epochs))
