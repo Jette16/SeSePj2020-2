@@ -9,5 +9,5 @@ python main.py --approach 2 --aug noAug --cls allCls --generate_results_overview
 python main.py --approach 1 --aug allAug --cls allCls --generate_results_overview<br>
 ### approach 2
 python main.py --approach 2 --aug allAug --cls allCls --generate_results_overview<br>
-## results overview generation can be performed anytime:
+## generate results overview anytime:
 python main.py --generate_results_overview<br>
