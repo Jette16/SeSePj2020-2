@@ -7,12 +7,15 @@ from utils.utils import create_directory
 from utils.utils import calculate_metrics#
 from utils.utils import read_all_datasets
 from utils.utils import check_dir
+from utils.utils import generate_results_overview
+from utils.utils import copy_eval_results_and_check_best_models
 from utils.constants import ROOT_DIR
 from utils.constants import ARCHIVE_NAMES
 from utils.constants import dataset_names_for_archive
 from utils.constants import ITERATIONS
 from utils.constants import CV
 from utils.constants import AUG
+from utils.constants import RANDOM_AUG_PARAMETERS
 from utils.constants import RANDOM_AUG_DIAGONAL
 from utils.constants import RANDOM_AUG_DOWN
 from utils.constants import RANDOM_AUG_RIGHT
@@ -82,9 +85,9 @@ def cv_fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name
         input_shape = x_train_aug.shape[1:]
         
         isplit='split'+str(i)+'/'
-        print(isplit[:-1])
+        print('\t\t\t\t'+isplit[:-1])
         output=output_directory+'/'+isplit
-        print(output)
+        #print(output)
         create_directory(output)
         
         classifier = create_classifier(classifier_name, epochs,input_shape, nb_classes, output)
@@ -108,7 +111,7 @@ def cv_fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name
     df_metrics = calculate_metrics(expected_y,predicted_y,totalduration)
     df_metrics.to_csv(output_directory + 'CV_metrics.csv', index=False)
 
-    print('Model saved:',output_directory)
+    #print('Model saved:',output_directory)
     
     print('CV DONE!')
     print(df_metrics)
@@ -163,9 +166,9 @@ def create_classifier(classifier_name,epochs, input_shape, nb_classes, output_di
     if classifier_name == 'mlp':
         from classifiers import mlp
         return mlp.Classifier_MLP(output_directory, input_shape, nb_classes, verbose)
-    if classifier_name == 'resnet':
+    if classifier_name == 'resnet':#
         from classifiers import resnet
-        return resnet.Classifier_RESNET(output_directory, input_shape, nb_classes, verbose)
+        return resnet.Classifier_RESNET(epochs,output_directory, input_shape, nb_classes, verbose)
     if classifier_name == 'mcnn':
         from classifiers import mcnn
         return mcnn.Classifier_MCNN(output_directory, verbose)
@@ -175,9 +178,9 @@ def create_classifier(classifier_name,epochs, input_shape, nb_classes, output_di
     if classifier_name == 'twiesn':
         from classifiers import twiesn
         return twiesn.Classifier_TWIESN(output_directory, verbose)
-    if classifier_name == 'encoder':
+    if classifier_name == 'encoder':#
         from classifiers import encoder
-        return encoder.Classifier_ENCODER(output_directory, input_shape, nb_classes, verbose)
+        return encoder.Classifier_ENCODER(epochs,output_directory, input_shape, nb_classes, verbose)
     if classifier_name == 'mcdcnn':
         from classifiers import mcdcnn
         return mcdcnn.Classifier_MCDCNN(output_directory, input_shape, nb_classes, verbose)
@@ -211,6 +214,9 @@ parser.add_argument('--cls', dest='cls',
 parser.add_argument('--cls_epochs', dest='cls_epochs', type=int,
                     help='epochs of training')
 
+parser.add_argument('--generate_results_overview', dest='generate_results_overview', action='store_true',
+                    help='epochs of training')
+
 def main():
     
     start=time.time()
@@ -230,8 +236,8 @@ def main():
             
         if args.cls_epochs is not None:
             epochs = args.cls_epochs
-        else:
-            epochs = CLS_EPOCHS
+       
+            
         
         if args.cls is not None:
             
@@ -239,47 +245,61 @@ def main():
   
                 for classifier_name in CLASSIFIERS:
                     
-                    print('classifier_name', classifier_name + '_ep'+str(CLS_EPOCHS))
-        
+                    
+                    
                     ARCHIVE_NAME=ARCHIVE_NAMES[0]
                     #print('\tarchive_name', ARCHIVE_NAME)
-        
+                    if epochs is None:
+                        epochs = CLS_EPOCHS[classifier_name]
+                    print('\tclassifier_name', classifier_name + '_ep'+str(epochs))
+                        
                     datasets_dict = read_all_datasets(ROOT_DIR, ARCHIVE_NAME)
         
                    
     
-                    for dataset_name in dataset_names_for_archive[ARCHIVE_NAME]:
+                    # for dataset_name in dataset_names_for_archive[ARCHIVE_NAME]:
                         
-                        print('\tdataset_name: ', dataset_name)
+                    #     print('\tdataset_name: ', dataset_name)
             
                         
-                        tmp_output_directory = ROOT_DIR + '/results/' + classifier_name + '_ep'+str(CLS_EPOCHS) + '/approach1/'  + dataset_name + '/'
+                    tmp_output_directory = ROOT_DIR + '/results/' + classifier_name + '_ep'+str(epochs) + '/approach1_iter'+str(iterations) +'/'  
                         
-                        if args.aug=='allAug':
+                    if args.aug=='allAug':
+                        
+                        for aug in AUG:                              
                             
-                            for aug in AUG:                              
+                            if aug=='Random':
+                                # for diagonal in RANDOM_AUG_DIAGONAL:
+                                #     for down in RANDOM_AUG_DOWN:
+                                #         for right in RANDOM_AUG_RIGHT:
+                                #             for each in RANDOM_AUG_EACH:
+                                for parameters in RANDOM_AUG_PARAMETERS:
+                                      
+                                      diagonal = parameters[0]
+                                      down = parameters[1]
+                                      right = parameters[2]
+                                      each = parameters[3]
+                                      augmentator = RandomAug.RandomAug(diagonal,down,right,each)
+                                      augmentator_name = aug+'_diag'+str(diagonal)+'_down'+str(down)+'_right'+str(right)+'_each'+str(int(each))
+                            if aug=='PRA':
+                                for n in PRA_N:
+                                    augmentator=PartlyRandomAug.PartlyRandomAug(n)
+                                    augmentator_name = aug+'_n'+str(n)
+                                    
+                            if aug=='Per':
+                                for n in PER_N:
+                                    for prob in PER_PROB:
+                                        augmentator=PermutationAug.PermutationAug(n,prob)
+                                        augmentator_name = aug+'_n'+str(n)+'_prob'+str(prob)
+                            
+                            print('\t\taugmentator_name: ', augmentator_name)
+                            
+                            
+                            for dataset_name in dataset_names_for_archive[ARCHIVE_NAME]:
+                        
+                                print('\t\t\tdataset_name: ', dataset_name)
                                 
-                                if aug=='Random':
-                                    for diagonal in RANDOM_AUG_DIAGONAL:
-                                        for down in RANDOM_AUG_DOWN:
-                                            for right in RANDOM_AUG_RIGHT:
-                                                for each in RANDOM_AUG_EACH:
-                                                    augmentator = RandomAug.RandomAug(diagonal,down,right,each)
-                                                    augmentator_name = aug+'_diag'+str(diagonal)+'_down'+str(down)+'_right'+str(right)+'_each'+str(int(each))
-                                if aug=='PRA':
-                                    for n in PRA_N:
-                                        augmentator=PartlyRandomAug.PartlyRandomAug(n)
-                                        augmentator_name = aug+'_n'+str(n)
-                                        
-                                if aug=='Per':
-                                    for n in PER_N:
-                                        for prob in PER_PROB:
-                                            augmentator=PermutationAug.PermutationAug(n,prob)
-                                            augmentator_name = aug+'_n'+str(n)+'_prob'+str(prob)
-                                
-                                print('\t\taugmentator_name: ', augmentator_name)
-                                
-                                upper_dir=tmp_output_directory + augmentator_name 
+                                upper_dir=tmp_output_directory + augmentator_name+'/' + dataset_name
                                 
                                 done=check_dir(upper_dir)
                                 
@@ -291,7 +311,7 @@ def main():
                                     expected_y = []
                                                         
                                     for iter in range(iterations):
-                                        print('iter', iter)
+                                        print('\t\t\t\titer', iter)
                         
                                         #trr = ''
                                         
@@ -302,7 +322,7 @@ def main():
                                         #check_dir(upper_dir,iter)
                                             
                                         output_directory = upper_dir + '/'+trr+'/'
-                                        print(output_directory)
+                                        #print(output_directory)
                                         
                                         create_directory(output_directory)
                                         
@@ -358,48 +378,55 @@ def main():
                 for classifier_name in CLASSIFIERS:
                     
                     
-                    print('classifier_name', classifier_name + '_ep'+str(CLS_EPOCHS))
-                    ARCHIVE_NAME=ARCHIVE_NAMES[0]     
+                   
+                    ARCHIVE_NAME=ARCHIVE_NAMES[0] 
                     
+                    if epochs is None:
+                        epochs = CLS_EPOCHS[classifier_name]
+                        
+                    print('\tclassifier_name', classifier_name + '_ep'+str(epochs))
         
                     datasets_dict = read_all_datasets(ROOT_DIR, ARCHIVE_NAME)
         
                    
     
-                    for dataset_name in dataset_names_for_archive[ARCHIVE_NAME]:
+                    # for dataset_name in dataset_names_for_archive[ARCHIVE_NAME]:
                         
-                        print('\tdataset_name: ', dataset_name)
+                    #     print('\tdataset_name: ', dataset_name)
             
                         
-                        tmp_output_directory = ROOT_DIR + '/results/' + classifier_name +'_ep'+str(CLS_EPOCHS)+ '/approach2_cv'+str(cv)+'/'  + dataset_name + '/'
+                    tmp_output_directory = ROOT_DIR + '/results/' + classifier_name +'_ep'+str(epochs)+ '/approach2_cv'+str(cv)+'/'
+                    
+                    if args.aug=='allAug':
                         
-                        if args.aug=='allAug':
+                        for aug in AUG:                              
                             
-                            for aug in AUG:                              
-                                
-                                if aug=='Random':
-                                    for diagonal in RANDOM_AUG_DIAGONAL:
-                                        for down in RANDOM_AUG_DOWN:
-                                            for right in RANDOM_AUG_RIGHT:
-                                                for each in RANDOM_AUG_EACH:
-                                                    augmentator= RandomAug.RandomAug(diagonal,down,right,each)
-                                                    augmentator_name = aug+'_diag'+str(diagonal)+'_down'+str(down)+'_right'+str(right)+'_each'+str(int(each))
-                                if aug=='PRA':
-                                    for n in PRA_N:
-                                        augmentator=PartlyRandomAug.PartlyRandomAug(n)
-                                        augmentator_name = aug+'_n'+str(n)
+                            if aug=='Random':
+                                for diagonal in RANDOM_AUG_DIAGONAL:
+                                    for down in RANDOM_AUG_DOWN:
+                                        for right in RANDOM_AUG_RIGHT:
+                                            for each in RANDOM_AUG_EACH:
+                                                augmentator= RandomAug.RandomAug(diagonal,down,right,each)
+                                                augmentator_name = aug+'_diag'+str(diagonal)+'_down'+str(down)+'_right'+str(right)+'_each'+str(int(each))
+                            if aug=='PRA':
+                                for n in PRA_N:
+                                    augmentator=PartlyRandomAug.PartlyRandomAug(n)
+                                    augmentator_name = aug+'_n'+str(n)
+                                    
+                            if aug=='Per':
+                                for n in PER_N:
+                                    for prob in PER_PROB:
+                                        augmentator=PermutationAug.PermutationAug(n,prob)
+                                        augmentator_name = aug+'_n'+str(n)+'_prob'+str(prob)
+                                    
+                            
+                            print('\t\taugmentator_name: ', augmentator_name)                  
+                       
+                            for dataset_name in dataset_names_for_archive[ARCHIVE_NAME]:
+                        
+                                print('\t\t\tdataset_name: ', dataset_name)
                                         
-                                if aug=='Per':
-                                    for n in PER_N:
-                                        for prob in PER_PROB:
-                                            augmentator=PermutationAug.PermutationAug(n,prob)
-                                            augmentator_name = aug+'_n'+str(n)+'_prob'+str(prob)
-                                        
-                                
-                                print('\t\taugmentator_name: ', augmentator_name)                  
-                           
-                                        
-                                output_directory = tmp_output_directory + augmentator_name 
+                                output_directory = tmp_output_directory + augmentator_name + '/'+dataset_name
                                 
                                 #check_dir(output_directory)
                                 done=check_dir(output_directory)
@@ -410,10 +437,14 @@ def main():
                                     
                                     cv_fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name,epochs,output_directory,cv)
                 
-                                    print('\t\t\t\tDONE')
+                                    #print('\t\t\t\tDONE')
                                     
                                     # the creation of this directory means
                                     create_directory(output_directory + '/DONE')
+                                    
+    if args.generate_results_overview:
+        generate_results_overview()
+        copy_eval_results_and_check_best_models()
                                                     
                                                         
                                     
