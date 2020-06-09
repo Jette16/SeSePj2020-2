@@ -15,7 +15,7 @@ ITERATIONS = 4  # nb of random runs for random initializations
 CV = 4   # k-fold cross validation
 
 #augmentation methods
-AUG = ['Random']#'PRA','Per'
+AUG = ['Random','PRA']#'PRA','Per'
 #parameters for RandomAug
 RANDOM_AUG_PARAMETERS=[[0.5,0.25,0.25,True]]
 
@@ -29,7 +29,7 @@ PER_PROB=[0.5]
 
 
 #parameters for time series classification
-CLASSIFIERS = ['resnet'] #'cnn','resnet', 'encoder', 'fcn', 'mlp',  'tlenet', 'mcnn', 'twiesn',  'mcdcnn', 'inception']
+CLASSIFIERS = ['cnn'] #'cnn','resnet', 'encoder', 'fcn', 'mlp',  'tlenet', 'mcnn', 'twiesn',  'mcdcnn', 'inception']
 CLS_EPOCHS = {'cnn':2000,'fcn':2000,'encoder':100,'resnet':1500}
 
 #not related to our project
