@@ -258,10 +258,7 @@ def run_cv(augmentator,augmentator_name,tmp_output_directory,datasets_dict,class
             create_directory(output_directory)
             
             cv_fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name,epochs,output_directory,cv)
-
-            #print('\t\t\t\tDONE')
             
-            # the creation of this directory means
             create_directory(output_directory + '/DONE')
 
 ############################################### main
@@ -319,8 +316,6 @@ def main():
   
                 for classifier_name in CLASSIFIERS:
                     
-                    
-                    
                     ARCHIVE_NAME=ARCHIVE_NAMES[0]
                     #print('\tarchive_name', ARCHIVE_NAME)
                     if epochs =='':
@@ -329,13 +324,6 @@ def main():
                         
                     datasets_dict = read_all_datasets(ROOT_DIR, ARCHIVE_NAME)
         
-                   
-    
-                    # for dataset_name in dataset_names_for_archive[ARCHIVE_NAME]:
-                        
-                    #     print('\tdataset_name: ', dataset_name)
-            
-                        
                     tmp_output_directory = ROOT_DIR + '/results/' + classifier_name + '_ep'+str(epochs) + '/approach1_iter'+str(iterations) +'/'  
                     
                     if args.aug=='noAug':
@@ -401,13 +389,6 @@ def main():
                     print('\tclassifier_name', classifier_name + '_ep'+str(epochs))
         
                     datasets_dict = read_all_datasets(ROOT_DIR, ARCHIVE_NAME)
-        
-                   
-    
-                    # for dataset_name in dataset_names_for_archive[ARCHIVE_NAME]:
-                        
-                    #     print('\tdataset_name: ', dataset_name)
-            
                         
                     tmp_output_directory = ROOT_DIR + '/results/' + classifier_name +'_ep'+str(epochs)+ '/approach2_cv'+str(cv)+'/'
                     
@@ -444,7 +425,7 @@ def main():
                                         augmentator_name = aug+'_n'+str(n)+'_prob'+str(prob)
                                     
                             
-                            run_cv(augmentator,augmentator_name,tmp_output_directory,iterations,datasets_dict,classifier_name,epochs,start,cv)
+                            run_cv(augmentator,augmentator_name,tmp_output_directory,datasets_dict,classifier_name,epochs,start,cv)
                                     
     if args.generate_results_overview:
         generate_results_overview()
