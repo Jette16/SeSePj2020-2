@@ -19,31 +19,31 @@ class Permutator:
         return self.config
     
     
-    def permutate(self, path):
+    def permutate(self,path):
         path_copy = path.copy()
         prob = self.config["probability"]
-    
+        
         new_path = np.array([path_copy[0]])
         permutate = False
         prev = path_copy[0]
-        i = path_copy[1]
+        curr = path_copy[1]
         permutation = [0.,0.]
         end = path_copy[-1][0]
-    
-        while i[0] != end and i[1] != end:  
+        
+        while curr[0] != end or curr[1] != end:  
             if not permutate:
            
                 choice = np.random.choice(2, 1, p=[1.0-prob, prob])
         
-                if choice[0] == 0 or end in i:
-                    new_path = np.concatenate((new_path,np.array([i])))
+                if choice[0] == 0 or end in curr:
+                    new_path = np.vstack((new_path,np.array(curr)))
                     # get next element of path
-                    prev = i.copy()
+                    prev = curr.copy()
                 
-                    temp1 = np.where(path_copy[:,0] == i[0])[0]
-                    temp2 = np.where(path_copy[:,1] == i[1])[0]
+                    temp1 = np.where(path_copy[:,0] == curr[0])[0]
+                    temp2 = np.where(path_copy[:,1] == curr[1])[0]
                 
-                    i = path_copy[np.intersect1d(temp1,temp2)+1][0]
+                    curr = path_copy[np.intersect1d(temp1,temp2)+1][0]
                 
                 else: 
                     permutate = True
@@ -60,10 +60,10 @@ class Permutator:
                             permutation[0] = permutation[0]+1
                             permutation[1] = permutation[1]+1
                     
-                        if permutation[0] != i[0] or permutation[1] != i[1]:
+                        if permutation[0] != curr[0] or permutation[1] != curr[1]:
                             break
             else:
-                new_path = np.concatenate((new_path,np.array([permutation])))
+                new_path = np.vstack((new_path,np.array(permutation)))
             
                 if permutation[0] == end:
                     permutation[1] = permutation[1]+1
@@ -85,9 +85,9 @@ class Permutator:
                 test = (path_copy[:,0] == permutation[0]) & (path_copy[:,1] == permutation[1])
                 if path_copy[test].shape[0] != 0:
                     permutate = False
-                    i = permutation.copy()
+                    curr = permutation.copy()
                 
-        new_path = np.concatenate((new_path,np.array([i])))     
+        new_path = np.vstack((new_path,np.array(curr)))     
         return new_path
     
     def augment_paths(self, data):
@@ -105,16 +105,14 @@ class Permutator:
                 d, path = DTW.dtw(np.reshape(data[i], (length,1)),np.reshape(data[j], (length,1)), path = True)
                 
                 for n in range(self.config["n"]):
-                    try:
-                        new_path = self.permutate(path)
-                        temp_W,temp_V = DTW.get_warp_val_mat(new_path)
-                        temp_V = np.diag(temp_V[:,0])
-                        new_series = (np.linalg.inv(temp_V)@temp_W)
-                        new_series = new_series@data[i]
-                        new_series_list.append(new_series)
-                    except ValueError:
-                        continue
-        return np.array(new_series_list)
+                    new_path = self.permutate(path)
+                    temp_W,temp_V = DTW.get_warp_val_mat(new_path)
+                    temp_V = np.diag(temp_V[:,0])
+                    new_series = (np.linalg.inv(temp_V)@temp_W)
+                    new_series = new_series@data[i]
+                    new_series_list.append(new_series.tolist())
+
+        return np.asarray(new_series_list)
     
     def augment(self, X_data, y_data):
         
@@ -128,9 +126,11 @@ class Permutator:
         
         for c in classes: 
             class_data = X_data[y_data == c]
+            print(class_data.shape)
             new_data = self.augment_paths(class_data)
+            print(new_data.shape)
             labels = np.array([c] * new_data.shape[0])
-            X_data_copy = np.concatenate((X_data_copy, new_data))
-            y_data_copy = np.concatenate((y_data_copy, labels))
+            X_data_copy = np.vstack((X_data_copy, new_data))
+            y_data_copy = np.hstack((y_data_copy, labels))
             
         return X_data_copy, y_data_copy

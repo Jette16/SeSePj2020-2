@@ -90,7 +90,7 @@ class Partly_Random:
             class_data = X_data[y_data == c]
             new_data = self.augment_paths(class_data)
             labels = [c] * new_data.shape[0]
-            X_data_copy = np.concatenate((X_data_copy, new_data))
-            y_data_copy = np.concatenate((y_data_copy, labels))
+            X_data_copy = np.vstack((X_data_copy, new_data))
+            y_data_copy = np.hstack((y_data_copy, labels))
             
         return X_data_copy, y_data_copy
