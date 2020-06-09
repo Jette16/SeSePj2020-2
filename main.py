@@ -55,16 +55,17 @@ def cv_fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name
         #print(train,test)
         x_train, x_test, y_train, y_test = X[train], X[test], y[train], y[test]
         
-        #do augmentation
-        x_train_aug, y_train_aug = augmentator.augment(x_train, y_train)
+        if augmentator is not None:
+            #do augmentation
+            x_train, y_train = augmentator.augment(x_train, y_train)
         
         
-        nb_classes = len(np.unique(np.concatenate((y_train_aug, y_test), axis=0)))
+        nb_classes = len(np.unique(np.concatenate((y_train, y_test), axis=0)))
     
         # transform the labels from integers to one hot vectors
         enc = sklearn.preprocessing.OneHotEncoder(categories='auto')
-        enc.fit(np.concatenate((y_train_aug, y_test), axis=0).reshape(-1, 1))
-        y_train_aug = enc.transform(y_train_aug.reshape(-1, 1)).toarray()
+        enc.fit(np.concatenate((y_train, y_test), axis=0).reshape(-1, 1))
+        y_train = enc.transform(y_train.reshape(-1, 1)).toarray()
         y_test = enc.transform(y_test.reshape(-1, 1)).toarray()
         
         
@@ -73,12 +74,12 @@ def cv_fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name
         y_true = np.argmax(y_test, axis=1)
         
     
-        if len(x_train_aug.shape) == 2:  # if univariate
+        if len(x_train.shape) == 2:  # if univariate
             # add a dimension to make it multivariate with one dimension 
-            x_train_aug = x_train_aug.reshape((x_train_aug.shape[0], x_train_aug.shape[1], 1))
+            x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
             x_test = x_test.reshape((x_test.shape[0], x_test.shape[1], 1))
     
-        input_shape = x_train_aug.shape[1:]
+        input_shape = x_train.shape[1:]
         
         isplit='split'+str(i)+'/'
         print('\t\t\t\t'+isplit[:-1])
@@ -88,9 +89,9 @@ def cv_fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name
         
         classifier = create_classifier(classifier_name, epochs,input_shape, nb_classes, output)
     
-        classifier.fit(x_train_aug, y_train_aug, x_test, y_test, y_true)
+        classifier.fit(x_train, y_train, x_test, y_test, y_true)
         
-        y_pred=classifier.predict(x_test, y_true,x_train_aug,y_train_aug,y_test,return_df_metrics = False)
+        y_pred=classifier.predict(x_test, y_true,x_train,y_train,y_test,return_df_metrics = False)
         
         # convert the predicted from binary to integer        
         y_pred = np.argmax(y_pred , axis=1)
@@ -120,32 +121,33 @@ def fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name,ep
     x_test = datasets_dict[dataset_name][2]
     y_test = datasets_dict[dataset_name][3]
     
-    
-    x_train_aug, y_train_aug = augmentator.augment(x_train, y_train)
+    if augmentator is not None:
+            #do augmentation
+            x_train, y_train = augmentator.augment(x_train, y_train)
 
-    nb_classes = len(np.unique(np.concatenate((y_train_aug, y_test), axis=0)))
+    nb_classes = len(np.unique(np.concatenate((y_train, y_test), axis=0)))
 
     # transform the labels from integers to one hot vectors
     enc = sklearn.preprocessing.OneHotEncoder(categories='auto')
-    enc.fit(np.concatenate((y_train_aug, y_test), axis=0).reshape(-1, 1))
-    y_train_aug = enc.transform(y_train_aug.reshape(-1, 1)).toarray()
+    enc.fit(np.concatenate((y_train, y_test), axis=0).reshape(-1, 1))
+    y_train = enc.transform(y_train.reshape(-1, 1)).toarray()
     y_test = enc.transform(y_test.reshape(-1, 1)).toarray()
 
     # save orignal y because later we will use binary
     y_true = np.argmax(y_test, axis=1)
 
-    if len(x_train_aug.shape) == 2:  # if univariate
+    if len(x_train.shape) == 2:  # if univariate
         # add a dimension to make it multivariate with one dimension 
-        x_train_aug = x_train_aug.reshape((x_train_aug.shape[0], x_train_aug.shape[1], 1))
+        x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
         x_test = x_test.reshape((x_test.shape[0], x_test.shape[1], 1))
 
-    input_shape = x_train_aug.shape[1:]
+    input_shape = x_train.shape[1:]
     
     classifier = create_classifier(classifier_name, epochs,input_shape, nb_classes, output_directory)
 
-    classifier.fit(x_train_aug, y_train_aug, x_test, y_test, y_true)
+    classifier.fit(x_train, y_train, x_test, y_test, y_true)
     
-    y_pred=classifier.predict(x_test, y_true,x_train_aug,y_train_aug,y_test,return_df_metrics = False)
+    y_pred=classifier.predict(x_test, y_true,x_train,y_train,y_test,return_df_metrics = False)
     
     # convert the predicted from binary to integer        
     y_pred = np.argmax(y_pred , axis=1)
@@ -186,7 +188,81 @@ def create_classifier(classifier_name,epochs, input_shape, nb_classes, output_di
     if classifier_name == 'inception':
         from classifiers import inception
         return inception.Classifier_INCEPTION(output_directory, input_shape, nb_classes, verbose)
+    
+    
+def run_iterations(augmentator,augmentator_name,tmp_output_directory,iterations,datasets_dict,classifier_name,epochs,start):
+    print('\t\twithout augmentation: ', augmentator_name)
+                        
+    for dataset_name in dataset_names_for_archive[ARCHIVE_NAMES[0]]:
+   
+           print('\t\t\tdataset_name: ', dataset_name)
+           
+           upper_dir=tmp_output_directory + augmentator_name+'/' + dataset_name
+           
+           done=check_dir(upper_dir)
+           
+           if not done: 
+               #save all the predictions and the corresponding true class
+               predicted_y = []
+               expected_y = []
+                                   
+               for iter in range(iterations):
+                   print('\t\t\t\titer', iter)               
+                   trr = '_itr_' + str(iter)
+                       
+                   output_directory = upper_dir + '/'+trr+'/'
+                   #print(output_directory)
+                   
+                   create_directory(output_directory)
+                   
+                   y_pred,y_true=fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name,epochs,output_directory)
+                   
+   
+                   print('\t\t\t\tDONE')
+                   
+                   # the creation of this directory means
+                   create_directory(output_directory + '/DONE')
+                   
+                   if (y_pred.shape==y_true.shape):
+                       predicted_y.extend(y_pred)
+                       expected_y.extend(y_true)
+                   else:
+                       raise Exception("FALSE: y_pred.shape==y_true.shape.")
+                         
+   
+               #totalduration=sum(durations)   
+               totalduration = time.time() - start
+               df_metrics = calculate_metrics(expected_y,predicted_y,totalduration)
+               df_metrics.to_csv(upper_dir + '/avg_metrics.csv', index=False)
+               create_directory(upper_dir + '/DONE')
+           
+               #print('Model saved:',upper_dir[len(ROOT_DIR):])
+               
+               print('iterations DONE!')
+               print(df_metrics)
+    
+def run_cv(augmentator,augmentator_name,tmp_output_directory,datasets_dict,classifier_name,epochs,start,cv):
+    print('\t\taugmentator_name: ', augmentator_name)                  
+                       
+    for dataset_name in dataset_names_for_archive[ARCHIVE_NAMES[0]]:
 
+        print('\t\t\tdataset_name: ', dataset_name)
+                
+        output_directory = tmp_output_directory + augmentator_name + '/'+dataset_name
+        
+        #check_dir(output_directory)
+        done=check_dir(output_directory)
+        
+        if not done:
+        
+            create_directory(output_directory)
+            
+            cv_fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name,epochs,output_directory,cv)
+
+            #print('\t\t\t\tDONE')
+            
+            # the creation of this directory means
+            create_directory(output_directory + '/DONE')
 
 ############################################### main
 
@@ -261,6 +337,13 @@ def main():
             
                         
                     tmp_output_directory = ROOT_DIR + '/results/' + classifier_name + '_ep'+str(epochs) + '/approach1_iter'+str(iterations) +'/'  
+                    
+                    if args.aug=='noAug':
+                        augmentator=None
+                        augmentator_name='NoAug'
+                        
+                        run_iterations(augmentator,augmentator_name,tmp_output_directory,iterations,datasets_dict,classifier_name,epochs,start)
+                        
                         
                     if args.aug=='allAug':
                         
@@ -287,70 +370,7 @@ def main():
                                         augmentator=PermutationAug.PermutationAug(n,prob)
                                         augmentator_name = aug+'_n'+str(n)+'_prob'+str(prob)
                             
-                            print('\t\taugmentator_name: ', augmentator_name)
-                            
-                            
-                            for dataset_name in dataset_names_for_archive[ARCHIVE_NAME]:
-                        
-                                print('\t\t\tdataset_name: ', dataset_name)
-                                
-                                upper_dir=tmp_output_directory + augmentator_name+'/' + dataset_name
-                                
-                                done=check_dir(upper_dir)
-                                
-                                if not done:
-                                    
-                                        
-                                    #save all the predictions and the corresponding true class
-                                    predicted_y = []
-                                    expected_y = []
-                                                        
-                                    for iter in range(iterations):
-                                        print('\t\t\t\titer', iter)
-                        
-                                        #trr = ''
-                                        
-                                        trr = '_itr_' + str(iter)
-                                            
-                                        
-                                        
-                                        #check_dir(upper_dir,iter)
-                                            
-                                        output_directory = upper_dir + '/'+trr+'/'
-                                        #print(output_directory)
-                                        
-                                        create_directory(output_directory)
-                                        
-                                        y_pred,y_true=fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name,epochs,output_directory)
-                                        
-                    
-                                        print('\t\t\t\tDONE')
-                                        
-                                        # the creation of this directory means
-                                        create_directory(output_directory + '/DONE')
-                                        
-                                        
-            
-                                        # convert the predicted from binary to integer        
-                                        #y_pred = np.argmax(y_pred , axis=1)
-                                        
-                                        if (y_pred.shape==y_true.shape):
-                                            predicted_y.extend(y_pred)
-                                            expected_y.extend(y_true)
-                                        else:
-                                            raise Exception("FALSE: y_pred.shape==y_true.shape.")
-                                              
-            
-                                    #totalduration=sum(durations)   
-                                    totalduration = time.time() - start
-                                    df_metrics = calculate_metrics(expected_y,predicted_y,totalduration)
-                                    df_metrics.to_csv(upper_dir + '/avg_metrics.csv', index=False)
-                                    create_directory(upper_dir + '/DONE')
-                                
-                                    print('Model saved:',upper_dir)
-                                    
-                                    print('iterations DONE!')
-                                    print(df_metrics)
+                            run_iterations(augmentator,augmentator_name,tmp_output_directory,iterations,datasets_dict,classifier_name,epochs,start)
                                     
     if args.approach == 2:
         print('Conduct evaluation using approach 2.')
@@ -363,8 +383,7 @@ def main():
             
         if args.cls_epochs is not None:
             epochs = args.cls_epochs
-        else:
-            epochs = CLS_EPOCHS
+        
         
         if args.cls is not None:
             
@@ -392,6 +411,13 @@ def main():
                         
                     tmp_output_directory = ROOT_DIR + '/results/' + classifier_name +'_ep'+str(epochs)+ '/approach2_cv'+str(cv)+'/'
                     
+                     
+                    if args.aug=='noAug':
+                        augmentator=None
+                        augmentator_name='NoAug'
+                        
+                        run_cv(augmentator,augmentator_name,tmp_output_directory,datasets_dict,classifier_name,epochs,start,cv)
+                    
                     if args.aug=='allAug':
                         
                         for aug in AUG:                              
@@ -418,31 +444,12 @@ def main():
                                         augmentator_name = aug+'_n'+str(n)+'_prob'+str(prob)
                                     
                             
-                            print('\t\taugmentator_name: ', augmentator_name)                  
-                       
-                            for dataset_name in dataset_names_for_archive[ARCHIVE_NAME]:
-                        
-                                print('\t\t\tdataset_name: ', dataset_name)
-                                        
-                                output_directory = tmp_output_directory + augmentator_name + '/'+dataset_name
-                                
-                                #check_dir(output_directory)
-                                done=check_dir(output_directory)
-                                
-                                if not done:
-                                
-                                    create_directory(output_directory)
-                                    
-                                    cv_fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name,epochs,output_directory,cv)
-                
-                                    #print('\t\t\t\tDONE')
-                                    
-                                    # the creation of this directory means
-                                    create_directory(output_directory + '/DONE')
+                            run_cv(augmentator,augmentator_name,tmp_output_directory,iterations,datasets_dict,classifier_name,epochs,start,cv)
                                     
     if args.generate_results_overview:
         generate_results_overview()
         copy_eval_results_and_check_best_models()
+        print('Results overview generated.')
                                                     
                                                         
                                     
