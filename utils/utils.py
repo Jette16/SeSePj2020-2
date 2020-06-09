@@ -76,7 +76,9 @@ def copy_eval_results_and_check_best_models():
             if type(metric) is str: 
                 metric0=float(metric.split('(')[0])
                 metrics.append(metric0)
-        best_metrics.update({d:max(metrics)})
+                
+        if (len(metrics)!=0):
+            best_metrics.update({d:max(metrics)})
         
     color_the_best_metric(target,'results',best_metrics )
         
