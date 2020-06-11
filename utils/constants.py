@@ -1,9 +1,8 @@
 # change this directory for your machine
-ROOT_DIR = 'C:/Users/admin/Desktop/SS/SeSe'
+ROOT_DIR = 'C:/Users/Marco/Documents/SoSe2020/PJSeSe/Qian/SeSePj2020-2'
 
 #datasets to use
-UNIVARIATE_DATASET_NAMES_2018 = ['Adiac', 'ArrowHead', 'Beef','BeetleFly', 'BirdChicken',
-                                 'Car','CBF','ChlorineConcentration','CinCECGTorso','Coffee']
+UNIVARIATE_DATASET_NAMES_2018 = ['Adiac', 'ArrowHead', 'Beef']
 ARCHIVE_NAMES = ['UCRArchive_2018']
 
 dataset_names_for_archive = {'UCRArchive_2018': UNIVARIATE_DATASET_NAMES_2018}                              

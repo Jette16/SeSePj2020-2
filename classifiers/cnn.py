@@ -50,8 +50,10 @@ class Classifier_CNN:
 
         model_checkpoint = keras.callbacks.ModelCheckpoint(filepath=file_path, monitor='loss',
                                                            save_best_only=True)
+                                                           
+        early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_acc', patience=100)
 
-        self.callbacks = [model_checkpoint]
+        self.callbacks = [model_checkpoint, early_stopping_callback]
 
         return model
 
@@ -64,6 +66,7 @@ class Classifier_CNN:
         mini_batch_size = 16
         nb_epochs = self.epochs #2000
 
+        
         start_time = time.time()
 
         hist = self.model.fit(x_train, y_train, batch_size=mini_batch_size, epochs=nb_epochs,
@@ -79,7 +82,9 @@ class Classifier_CNN:
 
         # convert the predicted from binary to integer
         y_pred = np.argmax(y_pred, axis=1)
-
+        
+        print("The training took ", len(hist.history['loss']), "epochs.")
+        
         save_logs(self.output_directory, hist, y_pred, y_true, duration,lr=False)
 
         keras.backend.clear_session()
