@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 
-class Permutator:
+class Permutator_Paths:
     
         
     #Class for the partly random approach with the variable config (dict) where:
@@ -90,48 +90,26 @@ class Permutator:
         new_path = np.vstack((new_path,np.array(curr)))     
         return new_path
     
-    def augment_paths(self, data):
-        #number of timeseries
-        count = data.shape[0]
-        length = data.shape[1]
-        new_series_list = []
-        
-        #calculate every path between every two timeseries
-        for i in range(count):
-            for j in range(count):
-                if i == j:
-                    continue
-                
-                d, path = DTW.dtw(np.reshape(data[i], (length,1)),np.reshape(data[j], (length,1)), path = True)
-                
-                for n in range(self.config["n"]):
-                    new_path = self.permutate(path)
-                    temp_W,temp_V = DTW.get_warp_val_mat(new_path)
-                    temp_V = np.diag(temp_V[:,0])
-                    new_series = (np.linalg.inv(temp_V)@temp_W)
-                    print(new_series.shape)
-                    new_series = new_series@data[i]
-                    print(data[i].shape)
-                    new_series_list.append(new_series.tolist())
-
-        return np.asarray(new_series_list)
     
-    def augment(self, X_data, y_data):
+    def augment(self, X_data, y_data, indices, paths, path_indexes):
         
         if not(type(X_data) is np.ndarray and  type(y_data) is np.ndarray):
             print("Input type has to be np.ndarray")
             return
         
-        classes = np.unique(y_data)
         X_data_copy = X_data.copy()
         y_data_copy = y_data.copy()
         
-        for c in classes: 
-            class_data = X_data[y_data == c]
-            new_data = self.augment_paths(class_data)
-            labels = np.array([c] * new_data.shape[0])
-            X_data_copy = np.vstack((X_data_copy, new_data))
-            y_data_copy = np.hstack((y_data_copy, labels))
-            print(c)
+        for idx,p in enumerate(paths): 
+            for i in range(self.config["n"]):
+                new_path = self.permutate(np.array(p))
+                temp_W,temp_V = DTW.get_warp_val_mat(new_path)
+                temp_V = np.diag(temp_V[:,0])
+                new_series = (np.linalg.inv(temp_V)@temp_W)
+                data = X_data[indices == path_indexes[idx][1]]
+                c = path_indexes[idx][0]
+                new_series = new_series@data[0]
+                X_data_copy = np.vstack((X_data_copy, new_series))
+                y_data_copy = np.hstack((y_data_copy, c))
             
         return X_data_copy, y_data_copy
