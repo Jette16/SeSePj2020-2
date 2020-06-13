@@ -2,6 +2,8 @@ from builtins import print
 import numpy as np
 import pandas as pd
 import matplotlib
+import pickle
+from augmentation.src import dtw_mean as DTW
 from datetime import datetime
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -26,7 +28,44 @@ from openpyxl import Workbook
 from scipy.interpolate import interp1d
 from scipy.io import loadmat
 
+def generate_save_paths(X_data, y_data, index, path_to_file):
+    '''
+    function to generate and save the warping paths
+     - X_data: The data to generate the paths
+     - y_data: The labels according to each time series
+     - index: The index according to each time series in X_data
+     - path_to_file: String with indicates where the file for the paths and their indices will be saved
+     
+    '''
+    if os.path.isfile(path_to_file + "_paths.txt") and os.path.isfile(path_to_file + "path_indices.txt"):
+        print('paths already generated')
+        return
+    print('generate and save paths')
+    paths = []
+    index_combination = []
 
+    classes = np.unique(y_data)
+
+    length = X_data.shape[1]
+    for c in classes: 
+        ind = index[y_data == c]
+        for i in ind:
+            for j in ind:
+                if i == j:
+                    continue
+                d, path = DTW.dtw(np.reshape(X_data[i,:], (length,1)),np.reshape(X_data[j,:], (length,1)), path = True)
+                paths.append(path)
+                index_combination.append([c,i,j])
+        print(f"Generated paths for class {c}")
+
+
+    with open(path_to_file + "_paths.txt", "wb") as f:
+        pickle.dump(paths, f)
+    
+    with open(path_to_file + "path_indices.txt", "wb") as f:
+        pickle.dump(index_combination, f)
+        
+    print('done')
 
 def color_the_best_metric(excelfile,sheetname,best_metrics):
     wb = load_workbook(excelfile)
@@ -85,14 +124,16 @@ def copy_eval_results_and_check_best_models():
   
 ###########
 def generate_results_overview():
-    df_cols=['approach','classifier','augmentation',
-             'Adiac', 'ArrowHead', 'Beef','BeetleFly', 'BirdChicken','Car','CBF','ChlorineConcentration','CinCECGTorso','Coffee']
+    df_cols=['approach','classifier','augmentation']
+    df_cols = df_cols +DATASET_NAMES_2018
+             
     rows=[]
     dfs=[]
-    result = {'approach':None,'classifier': None,'augmentation':None,
-              'Adiac': None,  'ArrowHead': None, 'Beef': None, 
-              'BeetleFly': None,  'BirdChicken': None, 'Car': None, 
-              'CBF': None, 'ChlorineConcentration': None, 'CinCECGTorso': None,'Coffee': None }
+    
+    result = {'approach':None,'classifier': None,'augmentation':None}
+    for data in DATASET_NAMES_2018:
+        result.update({data:None})
+              
     
     cls_dirs= [d for d in os.listdir(ROOT_DIR+'/results') if os.path.isdir(ROOT_DIR+'/results/'+d)]
  
@@ -146,6 +187,7 @@ def generate_results_overview():
                     result[data_dir]=None
                
     df = pd.concat(dfs)  
+    print(df)
     append_eval_results_to_excel(ROOT_DIR+'/results/'+'results.xlsx', 'results', df)
 
 def append_eval_results_to_excel(excelfile,sheetname,df):
@@ -430,7 +472,7 @@ def transform_mts_to_ucr_format():
         print('Done')
 
 
-def calculate_metrics(y_true, y_pred, duration, y_true_val=None, y_pred_val=None):
+def calculate_metrics(y_true, y_pred, duration,y_true_val=None, y_pred_val=None):
     res = pd.DataFrame(data=np.zeros((1, 4), dtype=np.float), index=[0],
                        columns=['precision', 'accuracy', 'recall', 'duration'])
     res['precision'] = precision_score(y_true, y_pred, average='macro',zero_division=0)
@@ -442,8 +484,23 @@ def calculate_metrics(y_true, y_pred, duration, y_true_val=None, y_pred_val=None
 
     res['recall'] = recall_score(y_true, y_pred, average='macro')
     res['duration'] = duration
+    #res['aug_duration'] = aug_time
     return res
 
+def calculate_metrics1(y_true, y_pred, duration, aug_time,y_true_val=None, y_pred_val=None):
+    res = pd.DataFrame(data=np.zeros((1, 5), dtype=np.float), index=[0],
+                       columns=['precision', 'accuracy', 'recall', 'duration','aug_duration'])
+    res['precision'] = precision_score(y_true, y_pred, average='macro',zero_division=0)
+    res['accuracy'] = accuracy_score(y_true, y_pred)
+
+    if not y_true_val is None:
+        # this is useful when transfer learning is used with cross validation
+        res['accuracy_val'] = accuracy_score(y_true_val, y_pred_val)
+
+    res['recall'] = recall_score(y_true, y_pred, average='macro')
+    res['duration'] = duration
+    res['aug_duration'] = aug_time
+    return res
 
 def save_test_duration(file_name, test_duration):
     res = pd.DataFrame(data=np.zeros((1, 1), dtype=np.float), index=[0],
