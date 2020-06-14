@@ -87,6 +87,8 @@ class Partly_Random:
         y_data_copy = y_data.copy()
         
         for idx,p in enumerate(paths): 
+            if not (path_indexes[idx][1] in indices and path_indexes[idx][2] in indices)
+                continue
             for i in range(self.config["n"]):
                 new_path = self.randomize_specific_section(np.array(p))
                 temp_W,temp_V = DTW.get_warp_val_mat(new_path)
