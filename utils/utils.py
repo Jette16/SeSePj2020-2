@@ -120,9 +120,121 @@ def copy_eval_results_and_check_best_models():
             best_metrics.update({d:max(metrics)})
         
     color_the_best_metric(target,'results',best_metrics )
-        
+
+def plot_epochs_metric1(data, aug_hists, file_name, loc, metric='loss'):
+    file_name=file_name+metric+'.png'
+    plt.figure()
+    for aug in aug_hists.keys():
+        plt.plot(aug_hists[aug][metric])
+    plt.legend(aug_hists.keys(), loc=loc)
+        #plt.plot(hist['val_' + metric])
+    plt.title(metric+'_dataset:' + data)
+    plt.ylabel(metric, fontsize='large')
+    plt.xlabel('epoch', fontsize='large')
+    #plt.legend(['train', 'val'], loc='upper left')
+    plt.savefig(file_name, bbox_inches='tight')
+    plt.close()      
   
 ###########
+def plot_epochs_overview():
+    # df_cols=['approach','classifier','augmentation']
+    # df_cols = df_cols +DATASET_NAMES_2018
+             
+    # rows=[]
+    # dfs=[]
+    
+    # result = {'approach':None,'classifier': None,'augmentation':None}
+    # for data in DATASET_NAMES_2018:
+    #     result.update({data:None})
+              
+    
+    cls_dirs= [d for d in os.listdir(ROOT_DIR+'/results') if os.path.isdir(ROOT_DIR+'/results/'+d)]
+ 
+    
+    for cls_dir in cls_dirs:
+        
+       # result['classifier']=cls_dir
+        dir0 = ROOT_DIR+'/results/'+cls_dir
+        appr_dirs  = [d for d in os.listdir(dir0) if os.path.isdir(dir0+'/'+d)]
+       
+        for appr_dir in appr_dirs:
+            
+            #result['approach']=appr_dir
+            dir0=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir
+            aug_dirs  = [d for d in os.listdir(dir0) if os.path.isdir(dir0+'/'+d)]
+            
+            aug_dataset_dict={}
+            
+            for aug_dir in aug_dirs:
+                
+                #result['augmentation']=aug_dir
+                dir0=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir+'/'+aug_dir
+                data_dirs  = [d for d in os.listdir(dir0) if os.path.isdir(dir0+'/'+d)]
+                
+                dataset_hist_dict = {}
+                for data_dir in data_dirs:
+                    
+                     if data_dir in DATASET_NAMES_2018:
+                         dir0=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir+'/'+aug_dir+'/'+data_dir
+                         sub_dirs = [d for d in os.listdir(dir0) if os.path.isdir(dir0+'/'+d)]
+                         
+                         if 'DONE' in sub_dirs:
+                             dir0=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir+'/'+aug_dir+'/'+data_dir+'/'+sub_dirs[2]
+                             #print(dir0)
+                             if os.path.isfile(dir0+'/history.csv'):
+                                 df = pd.read_csv(dir0+'/history.csv')
+                                 
+                                 dataset_hist_dict.update({data_dir:df})
+                                
+                #print(dataset_hist_dict.keys())                 
+                aug_dataset_dict.update({aug_dir:dataset_hist_dict})
+                
+            #print(aug_dataset_dict.keys())
+            for data in DATASET_NAMES_2018:
+                aug_hists={}
+               
+                for aug in aug_dirs:
+                    dataset_hist=aug_dataset_dict[aug]
+                    if data in dataset_hist.keys():
+                        hist=dataset_hist[data]
+                        aug_hists.update({aug:hist})
+                #print(len(hists))
+                if len(aug_hists)!=0:
+                    
+                    file_name=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir+'/'+data+'_epochs_'
+                    plot_epochs_metric1(data, aug_hists, file_name, 'upper left',metric='loss')
+                    plot_epochs_metric1(data, aug_hists, file_name, 'upper left',metric='val_loss')
+                    plot_epochs_metric1(data, aug_hists, file_name, 'lower right',metric='accuracy')
+                    plot_epochs_metric1(data, aug_hists, file_name, 'lower right',metric='val_accuracy')
+                     
+    #                  #res=[]
+    #                  if 'DONE' in sub_dirs:
+    #                      for sub_dir in sub_dirs:
+                             
+    #                             dir0=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir+'/'+aug_dir+'/'+data_dir+'/'+sub_dir
+    #                             if os.path.isfile(dir0+'/df_metrics.csv'):
+                                    
+    #                                 df=pd.read_csv(dir0+'/df_metrics.csv')
+    #                                 acc = df['accuracy'][0] 
+    #                                 res.append(acc)
+                                   
+    #                      if len(res)!=0:
+                        
+    #                         res=np.array(res)                            
+    #                         mean=round(np.mean(res)*100,1)
+    #                         std=round(np.std(res)*100,1)
+    #                         result[data_dir]=str(mean)+'('+str(std)+')'
+   
+    #             rows.append(result)
+    #             df = pd.DataFrame(rows, columns = df_cols)                
+    #             dfs.append(df)
+    #             rows=[]
+    #             for data_dir in data_dirs:
+    #                 result[data_dir]=None
+               
+    # df = pd.concat(dfs)  
+    # print(df)
+    # append_eval_results_to_excel(ROOT_DIR+'/results/'+'results.xlsx', 'results', df)
 def generate_results_overview():
     df_cols=['approach','classifier','augmentation']
     df_cols = df_cols +DATASET_NAMES_2018
