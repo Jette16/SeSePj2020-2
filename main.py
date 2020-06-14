@@ -3,11 +3,15 @@ import numpy as np
 import sklearn
 from sklearn.model_selection import StratifiedKFold
 import time 
+import pickle
 from utils.utils import create_directory
 from utils.utils import calculate_metrics#
+from utils.utils import calculate_metrics1
 from utils.utils import read_all_datasets
 from utils.utils import check_dir
+from utils.utils import generate_save_paths
 from utils.utils import generate_results_overview
+from utils.utils import plot_epochs_overview
 from utils.utils import copy_eval_results_and_check_best_models
 from utils.constants import ROOT_DIR
 from utils.constants import ARCHIVE_NAMES
@@ -28,7 +32,7 @@ from augmentation import PermutationAug
 
 
 
-def cv_fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name,epochs,output_directory,k):
+def cv_fit_classifier_aug(args,augmentator,datasets_dict,dataset_name,classifier_name,epochs,output_directory,k):
     x_train = datasets_dict[dataset_name][0]
     y_train = datasets_dict[dataset_name][1]
     x_test = datasets_dict[dataset_name][2]
@@ -38,6 +42,10 @@ def cv_fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name
     #concatenate all data
     X=np.concatenate((x_train, x_test))
     y=np.concatenate((y_train, y_test))
+    
+    #generate and save paths for all data
+    #index=np.arange(start=0, stop=len(y), step=1)
+    #generate_save_paths(X, y, index, output_directory)
 
     #save all the predictions and the corresponding true class
     predicted_y = []
@@ -49,16 +57,35 @@ def cv_fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name
     #split the data into k folds keeping the class imbalance
     skf = StratifiedKFold(n_splits=k)
     i=0
+    aug=0
     #training and validation on each fold
     for train, test in skf.split(X, y):
         i+=1
         #print(train,test)
         x_train, x_test, y_train, y_test = X[train], X[test], y[train], y[test]
         
+        isplit='split'+str(i)+'/'
+        print('\t\t\t\t'+isplit[:-1])
+        output=output_directory+'/'+isplit
+        #print(output)
+        create_directory(output)
+        
         if augmentator is not None:
             #do augmentation
+            #start of CV
+            print('augmentation begin...')
+            start_time1 = time.time() 
+            #indices=train
+            #with open(output_directory + "_paths.txt", 'rb') as pickle_file:
+                #paths= pickle.load(pickle_file)
+            #with open(output_directory +"path_indices.txt", 'rb') as pickle_file:
+                #path_indexes= pickle.load(pickle_file)
+            
+            #x_train, y_train = augmentator.augment(x_train, y_train,indices, paths, path_indexes)
             x_train, y_train = augmentator.augment(x_train, y_train)
-        
+            aug_time = time.time() - start_time1
+            print('augmentation done.')
+            aug+=aug_time
         
         nb_classes = len(np.unique(np.concatenate((y_train, y_test), axis=0)))
     
@@ -81,13 +108,9 @@ def cv_fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name
     
         input_shape = x_train.shape[1:]
         
-        isplit='split'+str(i)+'/'
-        print('\t\t\t\t'+isplit[:-1])
-        output=output_directory+'/'+isplit
-        #print(output)
-        create_directory(output)
+       
         
-        classifier = create_classifier(classifier_name, epochs,input_shape, nb_classes, output)
+        classifier = create_classifier(args,classifier_name, epochs,input_shape, nb_classes, output)
     
         classifier.fit(x_train, y_train, x_test, y_test, y_true)
         
@@ -105,17 +128,19 @@ def cv_fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name
         
     #totalduration=sum(durations)   
     totalduration = time.time() - start_time0
-    df_metrics = calculate_metrics(expected_y,predicted_y,totalduration)
+    df_metrics = calculate_metrics1(expected_y,predicted_y,totalduration,aug)
     df_metrics.to_csv(output_directory + 'CV_metrics.csv', index=False)
 
     #print('Model saved:',output_directory)
     
     print('CV DONE!')
     print(df_metrics)
+    
+    return aug_time
 
 
     
-def fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name,epochs,output_directory):
+def fit_classifier_aug(args,augmentator,datasets_dict,dataset_name,classifier_name,epochs,output_directory):
     x_train = datasets_dict[dataset_name][0]
     y_train = datasets_dict[dataset_name][1]
     x_test = datasets_dict[dataset_name][2]
@@ -123,7 +148,11 @@ def fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name,ep
     
     if augmentator is not None:
             #do augmentation
+            print('augmentation begin...')
+            start_time1 = time.time() 
             x_train, y_train = augmentator.augment(x_train, y_train)
+            aug_time = time.time() - start_time1
+            print('augmentation done.')
 
     nb_classes = len(np.unique(np.concatenate((y_train, y_test), axis=0)))
 
@@ -143,7 +172,7 @@ def fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name,ep
 
     input_shape = x_train.shape[1:]
     
-    classifier = create_classifier(classifier_name, epochs,input_shape, nb_classes, output_directory)
+    classifier = create_classifier(args,classifier_name, epochs,input_shape, nb_classes, output_directory)
 
     classifier.fit(x_train, y_train, x_test, y_test, y_true)
     
@@ -157,7 +186,7 @@ def fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name,ep
 
 
 
-def create_classifier(classifier_name,epochs, input_shape, nb_classes, output_directory, verbose=False):
+def create_classifier(args,classifier_name,epochs, input_shape, nb_classes, output_directory, verbose=False):
     if classifier_name == 'fcn':
         from classifiers import fcn
         return fcn.Classifier_FCN(output_directory, input_shape, nb_classes, verbose)
@@ -184,13 +213,19 @@ def create_classifier(classifier_name,epochs, input_shape, nb_classes, output_di
         return mcdcnn.Classifier_MCDCNN(output_directory, input_shape, nb_classes, verbose)
     if classifier_name == 'cnn':  # Time-CNN #modified
         from classifiers import cnn
-        return cnn.Classifier_CNN(epochs,output_directory, input_shape, nb_classes, verbose)
+        from classifiers import cnnES
+        if args.es_patience is None:
+            print('without early stopping')
+            return cnn.Classifier_CNN(epochs,output_directory, input_shape, nb_classes, verbose)
+        else: 
+            print('with early stopping')
+            return cnnES.Classifier_CNN(args.es_patience,epochs,output_directory, input_shape, nb_classes, verbose)
     if classifier_name == 'inception':
         from classifiers import inception
         return inception.Classifier_INCEPTION(output_directory, input_shape, nb_classes, verbose)
     
     
-def run_iterations(augmentator,augmentator_name,tmp_output_directory,iterations,datasets_dict,classifier_name,epochs,start):
+def run_iterations(args,augmentator,augmentator_name,tmp_output_directory,iterations,datasets_dict,classifier_name,epochs,start):
     print('\t\twithout augmentation: ', augmentator_name)
                         
     for dataset_name in dataset_names_for_archive[ARCHIVE_NAMES[0]]:
@@ -215,7 +250,7 @@ def run_iterations(augmentator,augmentator_name,tmp_output_directory,iterations,
                    
                    create_directory(output_directory)
                    
-                   y_pred,y_true=fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name,epochs,output_directory)
+                   y_pred,y_true=fit_classifier_aug(args,augmentator,datasets_dict,dataset_name,classifier_name,epochs,output_directory)
                    
    
                    print('\t\t\t\tDONE')
@@ -241,7 +276,7 @@ def run_iterations(augmentator,augmentator_name,tmp_output_directory,iterations,
                print('iterations DONE!')
                print(df_metrics)
     
-def run_cv(augmentator,augmentator_name,tmp_output_directory,datasets_dict,classifier_name,epochs,start,cv):
+def run_cv(args,augmentator,augmentator_name,tmp_output_directory,datasets_dict,classifier_name,epochs,start,cv):
     print('\t\taugmentator_name: ', augmentator_name)                  
                        
     for dataset_name in dataset_names_for_archive[ARCHIVE_NAMES[0]]:
@@ -257,7 +292,7 @@ def run_cv(augmentator,augmentator_name,tmp_output_directory,datasets_dict,class
         
             create_directory(output_directory)
             
-            cv_fit_classifier_aug(augmentator,datasets_dict,dataset_name,classifier_name,epochs,output_directory,cv)
+            cv_fit_classifier_aug(args,augmentator,datasets_dict,dataset_name,classifier_name,epochs,output_directory,cv)
             
             create_directory(output_directory + '/DONE')
 
@@ -282,9 +317,14 @@ parser.add_argument('--cls', dest='cls',
 
 parser.add_argument('--cls_epochs', dest='cls_epochs', type=int,
                     help='epochs of training')
+parser.add_argument('--es_patience', dest='es_patience', type=int,
+                    help='early stopping patience')
 
 parser.add_argument('--generate_results_overview', dest='generate_results_overview', action='store_true',
-                    help='epochs of training')
+                    help='generate_results_overview')
+parser.add_argument('--plot_epochs_overview', dest='plot_epochs_overview', action='store_true',
+                    help='plot_epochs_overview')
+
 
 def main():
     
@@ -320,17 +360,26 @@ def main():
                     #print('\tarchive_name', ARCHIVE_NAME)
                     if epochs =='':
                         epochs = CLS_EPOCHS[classifier_name]
-                    print('\tclassifier_name', classifier_name + '_ep'+str(epochs))
+                        
+                    if args.es_patience is None:
+                        cl=classifier_name + '_ep'+str(epochs)
+                    else:
+                        cl=classifier_name + '_ep'+str(epochs)+'_patience'+str(args.es_patience )
+                        
+                        
+                    print('\tclassifier_name', cl)
+        
+                        
                         
                     datasets_dict = read_all_datasets(ROOT_DIR, ARCHIVE_NAME)
         
-                    tmp_output_directory = ROOT_DIR + '/results/' + classifier_name + '_ep'+str(epochs) + '/approach1_iter'+str(iterations) +'/'  
+                    tmp_output_directory = ROOT_DIR + '/results/' + cl + '/approach1_iter'+str(iterations) +'/'  
                     
                     if args.aug=='noAug':
                         augmentator=None
                         augmentator_name='NoAug'
                         
-                        run_iterations(augmentator,augmentator_name,tmp_output_directory,iterations,datasets_dict,classifier_name,epochs,start)
+                        run_iterations(args,augmentator,augmentator_name,tmp_output_directory,iterations,datasets_dict,classifier_name,epochs,start)
                         
                         
                     if args.aug=='allAug':
@@ -345,8 +394,9 @@ def main():
                                       down = parameters[1]
                                       right = parameters[2]
                                       each = parameters[3]
-                                      augmentator = RandomAug.RandomAug(diagonal,down,right,each)
-                                      augmentator_name = aug+'_diag'+str(diagonal)+'_down'+str(down)+'_right'+str(right)+'_each'+str(int(each))
+                                      n = parameters[4]
+                                      augmentator = RandomAug.RandomAug(n,diagonal,down,right,each)
+                                      augmentator_name = aug+'_diag'+str(diagonal)+'_down'+str(down)+'_right'+str(right)+'_each'+str(int(each))+'_n'+str(n)
                             if aug=='PRA':
                                 for n in PRA_N:
                                     augmentator=PartlyRandomAug.PartlyRandomAug(n)
@@ -358,7 +408,7 @@ def main():
                                         augmentator=PermutationAug.PermutationAug(n,prob)
                                         augmentator_name = aug+'_n'+str(n)+'_prob'+str(prob)
                             
-                            run_iterations(augmentator,augmentator_name,tmp_output_directory,iterations,datasets_dict,classifier_name,epochs,start)
+                            run_iterations(args,augmentator,augmentator_name,tmp_output_directory,iterations,datasets_dict,classifier_name,epochs,start)
                                     
     if args.approach == 2:
         print('Conduct evaluation using approach 2.')
@@ -386,18 +436,24 @@ def main():
                     if epochs =='':
                         epochs = CLS_EPOCHS[classifier_name]
                         
-                    print('\tclassifier_name', classifier_name + '_ep'+str(epochs))
+                    if args.es_patience is  None:
+                        cl=classifier_name + '_ep'+str(epochs)
+                    else:
+                        cl=classifier_name + '_ep'+str(epochs)+'_patience'+str(args.es_patience )
+                        
+                        
+                    print('\tclassifier_name', cl)
         
                     datasets_dict = read_all_datasets(ROOT_DIR, ARCHIVE_NAME)
                         
-                    tmp_output_directory = ROOT_DIR + '/results/' + classifier_name +'_ep'+str(epochs)+ '/approach2_cv'+str(cv)+'/'
+                    tmp_output_directory = ROOT_DIR + '/results/' + cl + '/approach2_cv'+str(cv)+'/'
                     
                      
                     if args.aug=='noAug':
                         augmentator=None
                         augmentator_name='NoAug'
                         
-                        run_cv(augmentator,augmentator_name,tmp_output_directory,datasets_dict,classifier_name,epochs,start,cv)
+                        run_cv(args,augmentator,augmentator_name,tmp_output_directory,datasets_dict,classifier_name,epochs,start,cv)
                     
                     if args.aug=='allAug':
                         
@@ -410,8 +466,9 @@ def main():
                                       down = parameters[1]
                                       right = parameters[2]
                                       each = parameters[3]
-                                      augmentator = RandomAug.RandomAug(diagonal,down,right,each)
-                                      augmentator_name = aug+'_diag'+str(diagonal)+'_down'+str(down)+'_right'+str(right)+'_each'+str(int(each))
+                                      n = parameters[4]
+                                      augmentator = RandomAug.RandomAug(n,diagonal,down,right,each)
+                                      augmentator_name = aug+'_diag'+str(diagonal)+'_down'+str(down)+'_right'+str(right)+'_each'+str(int(each))+'_n'+str(n)
                                       
                             if aug=='PRA':
                                 for n in PRA_N:
@@ -425,15 +482,17 @@ def main():
                                         augmentator_name = aug+'_n'+str(n)+'_prob'+str(prob)
                                     
                             
-                            run_cv(augmentator,augmentator_name,tmp_output_directory,datasets_dict,classifier_name,epochs,start,cv)
+                            run_cv(args,augmentator,augmentator_name,tmp_output_directory,datasets_dict,classifier_name,epochs,start,cv)
                                     
     if args.generate_results_overview:
         generate_results_overview()
         copy_eval_results_and_check_best_models()
         print('Results overview generated.')
-                                                    
+    if args. plot_epochs_overview:
+        plot_epochs_overview()     
+        print('Epochs overview plotted.')                                                 
                                                         
-                                    
+                             
                                     
         
 
