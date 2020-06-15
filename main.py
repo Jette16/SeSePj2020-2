@@ -26,8 +26,8 @@ from utils.constants import PER_PROB
 from utils.constants import CLASSIFIERS
 from utils.constants import CLS_EPOCHS
 from augmentation import RandomAug
-from augmentation import PartlyRandomAug
-from augmentation import PermutationAug
+from augmentation import PartlyRandomAugPath as PartlyRandomAug
+from augmentation import PermutationAugPath as PermutationAug
 
 
 
@@ -44,6 +44,14 @@ def cv_fit_classifier_aug(args,augmentator,datasets_dict,dataset_name,classifier
     y=np.concatenate((y_train, y_test))
     
     #generate and save paths for all data
+    gen_time=0
+    if (type(augmentator)==type(PartlyRandomAug.PartlyRandomAug(1))) or (type(augmentator)==type(PermutationAug.PermutationAug(1, 0.1))):
+       time0 = time.time() 
+       index=np.arange(start=0, stop=len(y), step=1)
+       generate_save_paths(X, y, index, output_directory)   
+       gen_time=time.time() -  time0
+       print('generation duration:',int(gen_time) )                                                                     
+                                                                                
     #index=np.arange(start=0, stop=len(y), step=1)
     #generate_save_paths(X, y, index, output_directory)
 
@@ -74,18 +82,30 @@ def cv_fit_classifier_aug(args,augmentator,datasets_dict,dataset_name,classifier
             #do augmentation
             #start of CV
             print('augmentation begin...')
+            original=len(y_train)
+            print('original data:',original)
             start_time1 = time.time() 
-            #indices=train
-            #with open(output_directory + "_paths.txt", 'rb') as pickle_file:
-                #paths= pickle.load(pickle_file)
-            #with open(output_directory +"path_indices.txt", 'rb') as pickle_file:
-                #path_indexes= pickle.load(pickle_file)
+         
+                
+            if (type(augmentator)==type(PartlyRandomAug.PartlyRandomAug(1))) or (type(augmentator)==type(PermutationAug.PermutationAug(1, 0.1))):
+                                                                                    indices=train
             
-            #x_train, y_train = augmentator.augment(x_train, y_train,indices, paths, path_indexes)
-            x_train, y_train = augmentator.augment(x_train, y_train)
+                                                                                    with open(output_directory + "_paths.txt", 'rb') as pickle_file:
+                                                                                        paths= pickle.load(pickle_file)
+                                                                                    with open(output_directory +"path_indices.txt", 'rb') as pickle_file:
+                                                                                        path_indexes= pickle.load(pickle_file)
+                                                                                    x_train, y_train = augmentator.augment(x_train, y_train,indices, paths, path_indexes)
+            else:
+                x_train, y_train = augmentator.augment(x_train, y_train)
+                
+            augmentated=len(y_train)
+            print('augmentated data:',augmentated)
             aug_time = time.time() - start_time1
-            print('augmentation done.')
+            print('augmentation duration:',round(aug_time,2))
             aug+=aug_time
+            
+            if gen_time!=0:
+                aug+=gen_time
         
         nb_classes = len(np.unique(np.concatenate((y_train, y_test), axis=0)))
     
@@ -128,7 +148,7 @@ def cv_fit_classifier_aug(args,augmentator,datasets_dict,dataset_name,classifier
         
     #totalduration=sum(durations)   
     totalduration = time.time() - start_time0
-    df_metrics = calculate_metrics1(expected_y,predicted_y,totalduration,aug)
+    df_metrics = calculate_metrics1(expected_y,predicted_y,totalduration,aug,original,augmentated)
     df_metrics.to_csv(output_directory + 'CV_metrics.csv', index=False)
 
     #print('Model saved:',output_directory)
@@ -136,7 +156,7 @@ def cv_fit_classifier_aug(args,augmentator,datasets_dict,dataset_name,classifier
     print('CV DONE!')
     print(df_metrics)
     
-    return aug_time
+    return aug
 
 
     
@@ -215,7 +235,7 @@ def create_classifier(args,classifier_name,epochs, input_shape, nb_classes, outp
         from classifiers import cnn
         from classifiers import cnnES
         if args.es_patience is None:
-            print('without early stopping')
+            #print('without early stopping')
             return cnn.Classifier_CNN(epochs,output_directory, input_shape, nb_classes, verbose)
         else: 
             print('with early stopping')
