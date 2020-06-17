@@ -26,7 +26,9 @@ from sklearn.metrics import recall_score
 from openpyxl import load_workbook
 from openpyxl import Workbook
 from scipy.interpolate import interp1d
+from scipy.interpolate import make_interp_spline
 from scipy.io import loadmat
+
 
 def generate_save_paths(X_data, y_data, index, path_to_file):
     '''
@@ -125,7 +127,17 @@ def plot_epochs_metric1(data, aug_hists, file_name, loc, metric='loss'):
     file_name=file_name+metric+'.png'
     plt.figure()
     for aug in aug_hists.keys():
-        plt.plot(aug_hists[aug][metric])
+        #smoothing
+        #plot every 20 epochs
+        # y=aug_hists[aug][metric][::20]
+        # x=np.arange(start=0, stop=len(aug_hists[aug][metric]), step=1)[::20]
+        # x_new = np.linspace(1, 2000, 500)
+        # a_BSpline = make_interp_spline(x, y)
+        # y_new = a_BSpline(x_new)
+        # plt.plot(x_new, y_new)
+        
+        #without smoothing
+        plt.plot(aug_hists[aug][metric][::20])
     plt.legend(aug_hists.keys(), loc=loc)
         #plt.plot(hist['val_' + metric])
     plt.title(metric+'_dataset:' + data)
@@ -137,16 +149,6 @@ def plot_epochs_metric1(data, aug_hists, file_name, loc, metric='loss'):
   
 ###########
 def plot_epochs_overview():
-    # df_cols=['approach','classifier','augmentation']
-    # df_cols = df_cols +DATASET_NAMES_2018
-             
-    # rows=[]
-    # dfs=[]
-    
-    # result = {'approach':None,'classifier': None,'augmentation':None}
-    # for data in DATASET_NAMES_2018:
-    #     result.update({data:None})
-              
     
     cls_dirs= [d for d in os.listdir(ROOT_DIR+'/results') if os.path.isdir(ROOT_DIR+'/results/'+d)]
  
@@ -178,13 +180,20 @@ def plot_epochs_overview():
                          dir0=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir+'/'+aug_dir+'/'+data_dir
                          sub_dirs = [d for d in os.listdir(dir0) if os.path.isdir(dir0+'/'+d)]
                          
+                         dfs=[]
                          if 'DONE' in sub_dirs:
-                             dir0=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir+'/'+aug_dir+'/'+data_dir+'/'+sub_dirs[2]
-                             #print(dir0)
-                             if os.path.isfile(dir0+'/history.csv'):
-                                 df = pd.read_csv(dir0+'/history.csv')
-                                 
-                                 dataset_hist_dict.update({data_dir:df})
+                             for sub_dir in sub_dirs:
+                                 dir0=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir+'/'+aug_dir+'/'+data_dir+'/'+sub_dir
+                                 #print(dir0)
+                                 if os.path.isfile(dir0+'/history.csv'):
+                                     df = pd.read_csv(dir0+'/history.csv')
+                                     dfs.append(df)
+                             avg_df=df
+                             avg_df['loss']=(dfs[0] ['loss'] +  dfs[1] ['loss'] + dfs[2] ['loss'] + dfs[3] ['loss'] )/ 4 
+                             avg_df['val_loss']=(dfs[0] ['val_loss'] +  dfs[1] ['val_loss'] + dfs[2] ['val_loss'] + dfs[3] ['val_loss'] )/ 4 
+                             avg_df['accuracy']=(dfs[0] ['accuracy'] +  dfs[1] ['accuracy'] + dfs[2] ['accuracy'] + dfs[3] ['accuracy'] )/ 4 
+                             avg_df['val_accuracy']=(dfs[0] ['val_accuracy'] +  dfs[1] ['val_accuracy'] + dfs[2] ['val_accuracy'] + dfs[3] ['val_accuracy'] )/ 4
+                             dataset_hist_dict.update({data_dir:avg_df})
                                 
                 #print(dataset_hist_dict.keys())                 
                 aug_dataset_dict.update({aug_dir:dataset_hist_dict})
@@ -207,34 +216,7 @@ def plot_epochs_overview():
                     plot_epochs_metric1(data, aug_hists, file_name, 'lower right',metric='accuracy')
                     plot_epochs_metric1(data, aug_hists, file_name, 'lower right',metric='val_accuracy')
                      
-    #                  #res=[]
-    #                  if 'DONE' in sub_dirs:
-    #                      for sub_dir in sub_dirs:
-                             
-    #                             dir0=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir+'/'+aug_dir+'/'+data_dir+'/'+sub_dir
-    #                             if os.path.isfile(dir0+'/df_metrics.csv'):
-                                    
-    #                                 df=pd.read_csv(dir0+'/df_metrics.csv')
-    #                                 acc = df['accuracy'][0] 
-    #                                 res.append(acc)
-                                   
-    #                      if len(res)!=0:
-                        
-    #                         res=np.array(res)                            
-    #                         mean=round(np.mean(res)*100,1)
-    #                         std=round(np.std(res)*100,1)
-    #                         result[data_dir]=str(mean)+'('+str(std)+')'
-   
-    #             rows.append(result)
-    #             df = pd.DataFrame(rows, columns = df_cols)                
-    #             dfs.append(df)
-    #             rows=[]
-    #             for data_dir in data_dirs:
-    #                 result[data_dir]=None
-               
-    # df = pd.concat(dfs)  
-    # print(df)
-    # append_eval_results_to_excel(ROOT_DIR+'/results/'+'results.xlsx', 'results', df)
+    
 def generate_results_overview():
     df_cols=['approach','classifier','augmentation']
     df_cols = df_cols +DATASET_NAMES_2018
@@ -599,9 +581,9 @@ def calculate_metrics(y_true, y_pred, duration,y_true_val=None, y_pred_val=None)
     #res['aug_duration'] = aug_time
     return res
 
-def calculate_metrics1(y_true, y_pred, duration, aug_time,y_true_val=None, y_pred_val=None):
-    res = pd.DataFrame(data=np.zeros((1, 5), dtype=np.float), index=[0],
-                       columns=['precision', 'accuracy', 'recall', 'duration','aug_duration'])
+def calculate_metrics1(y_true, y_pred, duration, aug_time,original,augmentated,y_true_val=None, y_pred_val=None):
+    res = pd.DataFrame(data=np.zeros((1, 6), dtype=np.float), index=[0],
+                       columns=['precision', 'accuracy', 'recall', 'duration','aug_duration','aug_factor'])
     res['precision'] = precision_score(y_true, y_pred, average='macro',zero_division=0)
     res['accuracy'] = accuracy_score(y_true, y_pred)
 
@@ -612,6 +594,8 @@ def calculate_metrics1(y_true, y_pred, duration, aug_time,y_true_val=None, y_pre
     res['recall'] = recall_score(y_true, y_pred, average='macro')
     res['duration'] = duration
     res['aug_duration'] = aug_time
+    #res['original training data size'] = original
+    res['aug_factor'] = round(augmentated/original,2)
     return res
 
 def save_test_duration(file_name, test_duration):
