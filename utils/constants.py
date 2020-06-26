@@ -1,9 +1,9 @@
 # change this directory for your machine
-ROOT_DIR = 'C:/Users/admin/Desktop/SS/SeSe'
+ROOT_DIR = 'D:/Shi/RQ/SeSe'
 
 #datasets to use
-UNIVARIATE_DATASET_NAMES_2018 = ['Adiac', 'ArrowHead', 'Beef','BeetleFly', 'BirdChicken',
-                                 'Car','CBF','ChlorineConcentration','CinCECGTorso','Coffee']
+UNIVARIATE_DATASET_NAMES_2018 = ['BeetleFly', 'BirdChicken','Beef','Wine','Car','ECG200','ArrowHead','DiatomSizeReduction','Fish','Adiac']#'ChlorineConcentration','Earthquakes',
+#['BeetleFly', 'BirdChicken','Beef','Wine','Car','ECG200','ArrowHead','DiatomSizeReduction','Fish','Adiac']
 ARCHIVE_NAMES = ['UCRArchive_2018']
 
 dataset_names_for_archive = {'UCRArchive_2018': UNIVARIATE_DATASET_NAMES_2018}                              
@@ -15,9 +15,9 @@ ITERATIONS = 4  # nb of random runs for random initializations
 CV = 4   # k-fold cross validation
 
 #augmentation methods
-AUG = ['Random','PRA']#'PRA','Per'
+AUG = ['PRA','Per','Random']#'Random','PRA','Per'
 #parameters for RandomAug
-RANDOM_AUG_PARAMETERS=[[0.5,0.25,0.25,True]]
+RANDOM_AUG_PARAMETERS=[[0.5,0.25,0.25,True,1],[0.5,0.25,0.25,True,10]]
 
 
 #parameters for PartlyRandomAug
@@ -25,7 +25,7 @@ PRA_N=[1]
 
 #parameters for PermutationAug
 PER_N=[1]
-PER_PROB=[0.5]
+PER_PROB=[0.1]
 
 
 #parameters for time series classification
