@@ -2,8 +2,7 @@
 ROOT_DIR = 'D:/Shi/RQ/SeSe'
 
 #datasets to use
-UNIVARIATE_DATASET_NAMES_2018 = ['BeetleFly', 'BirdChicken','Beef','Wine','Car','ECG200','ArrowHead','DiatomSizeReduction','Fish','Adiac']#'ChlorineConcentration','Earthquakes',
-#['BeetleFly', 'BirdChicken','Beef','Wine','Car','ECG200','ArrowHead','DiatomSizeReduction','Fish','Adiac']
+UNIVARIATE_DATASET_NAMES_2018 = ['BeetleFly', 'BirdChicken','Beef','Wine','Car','ECG200','ArrowHead','DiatomSizeReduction','Fish','Adiac']
 ARCHIVE_NAMES = ['UCRArchive_2018']
 
 dataset_names_for_archive = {'UCRArchive_2018': UNIVARIATE_DATASET_NAMES_2018}                              
