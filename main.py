@@ -78,6 +78,7 @@ def cv_fit_classifier_aug(args,augmentator,datasets_dict,dataset_name,classifier
         #print(output)
         create_directory(output)
         original=len(y_train)
+        augmentated=0
         if augmentator is not None:
             #do augmentation
             #start of CV
