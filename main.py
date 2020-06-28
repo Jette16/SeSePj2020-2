@@ -77,12 +77,11 @@ def cv_fit_classifier_aug(args,augmentator,datasets_dict,dataset_name,classifier
         output=output_directory+'/'+isplit
         #print(output)
         create_directory(output)
-        
+        original=len(y_train)
         if augmentator is not None:
             #do augmentation
             #start of CV
             print('augmentation begin...')
-            original=len(y_train)
             print('original data:',original)
             start_time1 = time.time() 
          
