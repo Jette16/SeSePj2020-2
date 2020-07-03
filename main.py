@@ -79,10 +79,12 @@ def cv_fit_classifier_aug(args,augmentator,datasets_dict,dataset_name,classifier
         create_directory(output)
         original=len(y_train)
         augmentated=0
+       
         if augmentator is not None:
             #do augmentation
             #start of CV
             print('augmentation begin...')
+            
             print('original data:',original)
             start_time1 = time.time() 
          
@@ -417,18 +419,20 @@ def main():
                                       n = parameters[4]
                                       augmentator = RandomAug.RandomAug(n,diagonal,down,right,each)
                                       augmentator_name = aug+'_diag'+str(diagonal)+'_down'+str(down)+'_right'+str(right)+'_each'+str(int(each))+'_n'+str(n)
+                                      run_iterations(args,augmentator,augmentator_name,tmp_output_directory,iterations,datasets_dict,classifier_name,epochs,start)
                             if aug=='PRA':
                                 for n in PRA_N:
                                     augmentator=PartlyRandomAug.PartlyRandomAug(n)
                                     augmentator_name = aug+'_n'+str(n)
-                                    
+                                    run_iterations(args,augmentator,augmentator_name,tmp_output_directory,iterations,datasets_dict,classifier_name,epochs,start)
                             if aug=='Per':
                                 for n in PER_N:
                                     for prob in PER_PROB:
                                         augmentator=PermutationAug.PermutationAug(n,prob)
                                         augmentator_name = aug+'_n'+str(n)+'_prob'+str(prob)
+                                        run_iterations(args,augmentator,augmentator_name,tmp_output_directory,iterations,datasets_dict,classifier_name,epochs,start)
                             
-                            run_iterations(args,augmentator,augmentator_name,tmp_output_directory,iterations,datasets_dict,classifier_name,epochs,start)
+                          
                                     
     if args.approach == 2:
         print('Conduct evaluation using approach 2.')
@@ -489,20 +493,22 @@ def main():
                                       n = parameters[4]
                                       augmentator = RandomAug.RandomAug(n,diagonal,down,right,each)
                                       augmentator_name = aug+'_diag'+str(diagonal)+'_down'+str(down)+'_right'+str(right)+'_each'+str(int(each))+'_n'+str(n)
+                                      run_cv(args,augmentator,augmentator_name,tmp_output_directory,datasets_dict,classifier_name,epochs,start,cv)
                                       
                             if aug=='PRA':
                                 for n in PRA_N:
                                     augmentator=PartlyRandomAug.PartlyRandomAug(n)
                                     augmentator_name = aug+'_n'+str(n)
-                                    
+                                    run_cv(args,augmentator,augmentator_name,tmp_output_directory,datasets_dict,classifier_name,epochs,start,cv)
                             if aug=='Per':
                                 for n in PER_N:
                                     for prob in PER_PROB:
                                         augmentator=PermutationAug.PermutationAug(n,prob)
                                         augmentator_name = aug+'_n'+str(n)+'_prob'+str(prob)
+                                        run_cv(args,augmentator,augmentator_name,tmp_output_directory,datasets_dict,classifier_name,epochs,start,cv)
                                     
                             
-                            run_cv(args,augmentator,augmentator_name,tmp_output_directory,datasets_dict,classifier_name,epochs,start,cv)
+                          
                                     
     if args.generate_results_overview:
         generate_results_overview()
