@@ -138,7 +138,9 @@ def plot_epochs_metric1(data, aug_hists, file_name, loc, metric='loss'):
         
         #without smoothing
         plt.plot(aug_hists[aug][metric][::20])
-    plt.legend(aug_hists.keys(), loc=loc)
+    
+    plt.legend(aug_hists.keys(), loc='best')
+    #plt.legend(aug_hists.keys(), loc='lower left', bbox_to_anchor=(1.05, 1))
         #plt.plot(hist['val_' + metric])
     plt.title(metric+'_dataset:' + data)
     plt.ylabel(metric, fontsize='large')
@@ -187,7 +189,15 @@ def plot_epochs_overview():
                                  #print(dir0)
                                  if os.path.isfile(dir0+'/history.csv'):
                                      df = pd.read_csv(dir0+'/history.csv')
+                                     
+                                     if 'acc' in list(df):
+                            
+                                         df = df.rename({'acc': 'accuracy'},axis=1)
+                                     if 'val_acc' in list(df):
+                                         
+                                         df = df.rename({'val_acc': 'val_accuracy'},axis=1)
                                      dfs.append(df)
+                             
                              avg_df=df
                              avg_df['loss']=(dfs[0] ['loss'] +  dfs[1] ['loss'] + dfs[2] ['loss'] + dfs[3] ['loss'] )/ 4 
                              avg_df['val_loss']=(dfs[0] ['val_loss'] +  dfs[1] ['val_loss'] + dfs[2] ['val_loss'] + dfs[3] ['val_loss'] )/ 4 
@@ -195,7 +205,11 @@ def plot_epochs_overview():
                              avg_df['val_accuracy']=(dfs[0] ['val_accuracy'] +  dfs[1] ['val_accuracy'] + dfs[2] ['val_accuracy'] + dfs[3] ['val_accuracy'] )/ 4
                              dataset_hist_dict.update({data_dir:avg_df})
                                 
-                #print(dataset_hist_dict.keys())                 
+                #print(dataset_hist_dict.keys())
+                if aug_dir=='Random_diag0.5_down0.25_right0.25_each1_n1':
+                    aug_dir='Random_n1'#
+                if aug_dir=='Random_diag0.5_down0.25_right0.25_each1_n10':
+                    aug_dir='Random_n10'#
                 aug_dataset_dict.update({aug_dir:dataset_hist_dict})
                 
             #print(aug_dataset_dict.keys())
@@ -203,6 +217,10 @@ def plot_epochs_overview():
                 aug_hists={}
                
                 for aug in aug_dirs:
+                    if aug=='Random_diag0.5_down0.25_right0.25_each1_n1' :#
+                       aug='Random_n1'#
+                    if aug=='Random_diag0.5_down0.25_right0.25_each1_n10' :#
+                       aug='Random_n10'#
                     dataset_hist=aug_dataset_dict[aug]
                     if data in dataset_hist.keys():
                         hist=dataset_hist[data]
