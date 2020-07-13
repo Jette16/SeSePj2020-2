@@ -29,7 +29,7 @@ class RandomAug:
             elif j==m-1:
                 i+=1
                 W[i,j]=1
-            elif number < self.right:
+            elif number < self.down:
                 i+=1
                 W[i,j]=1
             elif number < self.right+self.down:
