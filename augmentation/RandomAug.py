@@ -5,7 +5,8 @@ import numpy as np
 # right - probability to go right in random walk
 # augment_each - specifies if each sequence should be augmented seperatly
 
-class RandomAugmentation:
+
+class RandomAug:
     def __init__(self, n=1, diagonal=0.50, down=0.25, right=0.25, augment_each=True):
         self.n = n
         self.diagonal = diagonal
@@ -29,7 +30,7 @@ class RandomAugmentation:
             elif j==m-1:
                 i+=1
                 W[i,j]=1
-            elif number < self.right:
+            elif number < self.down:
                 i+=1
                 W[i,j]=1
             elif number < self.right+self.down:
