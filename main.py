@@ -52,8 +52,6 @@ def cv_fit_classifier_aug(args,augmentator,datasets_dict,dataset_name,classifier
        gen_time=time.time() -  time0
        print('generation duration:',int(gen_time) )                                                                     
                                                                                 
-    #index=np.arange(start=0, stop=len(y), step=1)
-    #generate_save_paths(X, y, index, output_directory)
 
     #save all the predictions and the corresponding true class
     predicted_y = []
@@ -148,12 +146,12 @@ def cv_fit_classifier_aug(args,augmentator,datasets_dict,dataset_name,classifier
             raise Exception("FALSE: y_pred.shape==y_true.shape.")
               
         
-    #totalduration=sum(durations)   
+     
     totalduration = time.time() - start_time0
     df_metrics = calculate_metrics1(expected_y,predicted_y,totalduration,aug,original,augmentated)
     df_metrics.to_csv(output_directory + 'CV_metrics.csv', index=False)
 
-    #print('Model saved:',output_directory)
+    
     
     print('CV DONE!')
     print(df_metrics)
@@ -237,7 +235,7 @@ def create_classifier(args,classifier_name,epochs, input_shape, nb_classes, outp
         from classifiers import cnn
         from classifiers import cnnES
         if args.es_patience is None:
-            #print('without early stopping')
+            print('without early stopping')
             return cnn.Classifier_CNN(epochs,output_directory, input_shape, nb_classes, verbose)
         else: 
             print('with early stopping')
@@ -286,14 +284,11 @@ def run_iterations(args,augmentator,augmentator_name,tmp_output_directory,iterat
                    else:
                        raise Exception("FALSE: y_pred.shape==y_true.shape.")
                          
-   
-               #totalduration=sum(durations)   
                totalduration = time.time() - start
                df_metrics = calculate_metrics(expected_y,predicted_y,totalduration)
                df_metrics.to_csv(upper_dir + '/avg_metrics.csv', index=False)
                create_directory(upper_dir + '/DONE')
            
-               #print('Model saved:',upper_dir[len(ROOT_DIR):])
                
                print('iterations DONE!')
                print(df_metrics)
@@ -307,7 +302,6 @@ def run_cv(args,augmentator,augmentator_name,tmp_output_directory,datasets_dict,
                 
         output_directory = tmp_output_directory + augmentator_name + '/'+dataset_name
         
-        #check_dir(output_directory)
         done=check_dir(output_directory)
         
         if not done:
@@ -323,13 +317,14 @@ def run_cv(args,augmentator,augmentator_name,tmp_output_directory,datasets_dict,
 
 
 parser = argparse.ArgumentParser(description='Evaluate data augmentation')
-#experiment approach
+#experimental approaches
 parser.add_argument('--approach', dest='approach',type=int,
                     help='normal(1) or CV(2) approach to conduct evaluation')
 parser.add_argument('--iter', dest='iter',type=int,
                     help='nb of random init if do approach 1, default value in constants.py is used if not given')
 parser.add_argument('--cv', dest='cv',type=int,
                     help='nb of cv if do approach 2, default value in constants.py is used if not given')
+
 #augmentation method [RandomAug, PartlyRandomAug,PermutationAug,allAug]
 parser.add_argument('--aug', dest='aug', 
                     help='augmentation method')
