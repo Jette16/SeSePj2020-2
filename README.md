@@ -4,10 +4,10 @@
 2). parameters for augmentation and classification could be modified in utils/constants.py <br>
 3). you can choose your own UCR datasets by changing the list UNIVARIATE_DATASET_NAMES_2018 in utils/constants.py <br>
 ## Two experimental approaches:
-approach 1 (not used in our experiments): normal approach to run serval iterations on the original splits of the dataset
+### approach 1 (not used in our experiments): 
+normal approach to run serval iterations on the original splits of the dataset
 <br>
-approach 2 (we use this approach in our experiments): 
-<br>
+### approach 2 (we use this approach in our experiments): 
 stratified cross validation, the average accuracy of cross validation is taken as evaluation metric
 <br>
 ## Time Series Classification without augmentation:
