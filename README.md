@@ -1,5 +1,5 @@
 # SeSePj2020-2
-1). before start, please create the env according to utils/pip-requirements.txt
+1). before start, please setup the enviroment according to utils/pip-requirements.txt
 <br>
 2). parameters for augmentation and classification could be modified in utils/constants.py <br>
 ## two experimental approaches:
