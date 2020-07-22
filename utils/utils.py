@@ -140,12 +140,11 @@ def plot_epochs_metric1(data, aug_hists, file_name, loc, metric='loss'):
         plt.plot(aug_hists[aug][metric][::20])
     
     plt.legend(aug_hists.keys(), loc='best')
-    #plt.legend(aug_hists.keys(), loc='lower left', bbox_to_anchor=(1.05, 1))
-        #plt.plot(hist['val_' + metric])
+    
     plt.title(metric+'_dataset:' + data)
     plt.ylabel(metric, fontsize='large')
     plt.xlabel('epoch', fontsize='large')
-    #plt.legend(['train', 'val'], loc='upper left')
+   
     plt.savefig(file_name, bbox_inches='tight')
     plt.close()      
   
@@ -157,13 +156,13 @@ def plot_epochs_overview():
     
     for cls_dir in cls_dirs:
         
-       # result['classifier']=cls_dir
+       
         dir0 = ROOT_DIR+'/results/'+cls_dir
         appr_dirs  = [d for d in os.listdir(dir0) if os.path.isdir(dir0+'/'+d)]
        
         for appr_dir in appr_dirs:
             
-            #result['approach']=appr_dir
+            
             dir0=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir
             aug_dirs  = [d for d in os.listdir(dir0) if os.path.isdir(dir0+'/'+d)]
             
@@ -205,14 +204,14 @@ def plot_epochs_overview():
                              avg_df['val_accuracy']=(dfs[0] ['val_accuracy'] +  dfs[1] ['val_accuracy'] + dfs[2] ['val_accuracy'] + dfs[3] ['val_accuracy'] )/ 4
                              dataset_hist_dict.update({data_dir:avg_df})
                                 
-                #print(dataset_hist_dict.keys())
+               
                 if aug_dir=='Random_diag0.5_down0.25_right0.25_each1_n1':
                     aug_dir='Random_n1'#
                 if aug_dir=='Random_diag0.5_down0.25_right0.25_each1_n10':
                     aug_dir='Random_n10'#
                 aug_dataset_dict.update({aug_dir:dataset_hist_dict})
                 
-            #print(aug_dataset_dict.keys())
+           
             for data in DATASET_NAMES_2018:
                 aug_hists={}
                
@@ -225,7 +224,7 @@ def plot_epochs_overview():
                     if data in dataset_hist.keys():
                         hist=dataset_hist[data]
                         aug_hists.update({aug:hist})
-                #print(len(hists))
+                
                 if len(aug_hists)!=0:
                     
                     file_name=ROOT_DIR+'/results/'+cls_dir+'/'+appr_dir+'/'+data+'_epochs_'
