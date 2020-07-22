@@ -5,7 +5,7 @@
 ## two experimental approaches:
 approach 1: normal approach to run serval iterations on the original data
 <br>
-approach 2(we use this approach in the report): stratified cross validation, the average accuracy of cross validation is taken as the evaluation metric
+approach 2(we use this approach in the report): stratified cross validation, the average accuracy of cross validation is taken as evaluation metric
 <br>
 ## Time Series Classification without augmentation:
 ### approach 1
