@@ -11,5 +11,5 @@ python main.py --approach 1 --aug allAug --cls allCls --generate_results_overvie
 python main.py --approach 2 --aug allAug --cls allCls --generate_results_overview<br>
 ## generate results overview anytime:
 python main.py --generate_results_overview<br>
-## plot epochs_loss(&val_loss%accuracy&val_accuracy) overview anytime:
+## plot epochs_loss(&val_loss&accuracy&val_accuracy) overview anytime:
 python main.py --plot_epochs_overview<br>
