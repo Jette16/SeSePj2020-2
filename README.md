@@ -1,4 +1,4 @@
-We used the following github project as base code structure https://github.com/hfawaz/dl-4-tsc:
+We used the following github project as base code structure https://github.com/hfawaz/dl-4-tsc. We added the augmentation methods and changed the main.py.
 >@article{IsmailFawaz2018deep,
 >  Title                    = {Deep learning for time series classification: a review},
 >  Author                   = {Ismail Fawaz, Hassan and Forestier, Germain and Weber, Jonathan and Idoumghar, Lhassane and Muller, Pierre-Alain},
