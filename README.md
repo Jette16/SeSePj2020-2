@@ -4,7 +4,7 @@
 2). parameters for augmentation and classification could be modified in utils/constants.py <br>
 3). you can choose your own UCR datasets by changing the list UNIVARIATE_DATASET_NAMES_2018 in utils/constants.py <br>
 ## two experimental approaches:
-approach 1 (not used in our experiments): normal approach to run serval iterations on the original dataset, apply augmentation to the test data
+approach 1 (not used in our experiments): normal approach to run serval iterations on the original splits of the dataset
 <br>
 approach 2 (we use this approach in our experiments): 
 <br>
