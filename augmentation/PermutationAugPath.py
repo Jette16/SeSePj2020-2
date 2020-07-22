@@ -9,6 +9,9 @@ class PermutationAug:
     #Class for the partly random approach with the variable config (dict) where:
     # -n: number of generated paths for each calculated path
     # -probability: the probability that a point of the path is permutated
+
+    # ATTENTION:
+    # This method assumes that the warping paths were already calculated
     
     def __init__(self, n, probability):
         self.config = dict()
