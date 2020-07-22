@@ -13,7 +13,8 @@ We used the following github project as base code structure https://github.com/h
 1). before start, please setup the enviroment according to utils/pip-requirements.txt
 <br>
 2). parameters for augmentation and classification could be modified in utils/constants.py <br>
-3). you can choose your own UCR datasets by changing the list UNIVARIATE_DATASET_NAMES_2018 in utils/constants.py <br>
+3). download and extract the UCR datasets https://www.cs.ucr.edu/~eamonn/time_series_data_2018/ into the folder archives/UCRArchive_2018 <br>
+4). you can choose which UCR datasets to use by changing the list UNIVARIATE_DATASET_NAMES_2018 in utils/constants.py <br>
 ## Two experimental approaches:
 ### approach 1 (not used in our experiments): 
 normal approach to run serval iterations on the original splits of the dataset
