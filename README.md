@@ -2,6 +2,7 @@
 1). before start, please setup the enviroment according to utils/pip-requirements.txt
 <br>
 2). parameters for augmentation and classification could be modified in utils/constants.py <br>
+3). you can choose your own UCR datasets by changing the list UNIVARIATE_DATASET_NAMES_2018 in utils/constants.py <br>
 ## two experimental approaches:
 approach 1: normal approach to run serval iterations on the original data
 <br>
