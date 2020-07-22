@@ -3,7 +3,7 @@
 <br>
 2). parameters for augmentation and classification could be modified in utils/constants.py <br>
 3). you can choose your own UCR datasets by changing the list UNIVARIATE_DATASET_NAMES_2018 in utils/constants.py <br>
-## two experimental approaches:
+## Two experimental approaches:
 approach 1 (not used in our experiments): normal approach to run serval iterations on the original splits of the dataset
 <br>
 approach 2 (we use this approach in our experiments): 
@@ -20,7 +20,7 @@ python main.py --approach 2 --aug noAug --cls allCls --generate_results_overview
 python main.py --approach 1 --aug allAug --cls allCls --generate_results_overview<br>
 ### approach 2
 python main.py --approach 2 --aug allAug --cls allCls --generate_results_overview<br>
-## generate results overview anytime:
+## Generate results overview anytime:
 python main.py --generate_results_overview<br>
-## plot epochs_loss(&val_loss&accuracy&val_accuracy) overview anytime:
+## Plot epochs_loss(& val_loss & accuracy & val_accuracy) overview anytime:
 python main.py --plot_epochs_overview<br>
