@@ -1,3 +1,14 @@
+We used the following github project as base code structure:
+>@article{IsmailFawaz2018deep,
+>  Title                    = {Deep learning for time series classification: a review},
+>  Author                   = {Ismail Fawaz, Hassan and Forestier, Germain and Weber, Jonathan and Idoumghar, Lhassane and Muller, Pierre-Alain},
+>  journal                  = {Data Mining and Knowledge Discovery},
+>  Year                     = {2019},
+>  volume                   = {33},
+>  number                   = {4},
+>  pages                    = {917--963},
+>}
+
 # SeSePj2020-2
 1). before start, please setup the enviroment according to utils/pip-requirements.txt
 <br>
