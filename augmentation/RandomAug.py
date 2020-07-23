@@ -17,6 +17,7 @@ class RandomAug:
         self.augment_each = augment_each
         self.config={"name":"RandomAugmentation","n": n, "diagonal":diagonal, "right":right, "augment_each":augment_each}
 
+    #creates random warping matrix with given size and probabilities
     def random_w_and_v(self,n,m,diagonal=0.50,down=0.25,right=0.25):
         W=np.zeros((n,m))
         W[0,0]=1
@@ -49,21 +50,28 @@ class RandomAug:
     #geenreate random data augmentation
     def augment(self, data_X, data_Y):
         if self.augment_each:
+            #init new array and copy base data
             augmented_data_X=np.zeros((data_X.shape[0]*(self.n+1),data_X.shape[1]))
             augmented_data_Y=np.zeros((data_Y.shape[0]*(self.n+1)))
             augmented_data_X[data_X.shape[0]*self.n:]= data_X
             augmented_data_Y[data_Y.shape[0]*self.n:]= data_Y
+            
+            #generate n augmented time series for each base time series
             for i in range(data_X.shape[0]*self.n):
                 W,V =self.random_w_and_v(data_X.shape[-1], data_X.shape[-1])
                 augmented_data_X[i]= np.linalg.inv(V).dot(W).dot(data_X[i%data_X.shape[0]])
                 augmented_data_Y[i]= data_Y[i%data_X.shape[0]]
             return augmented_data_X, augmented_data_Y 
         else:
+            #case which resuses warping matrix for all base time series
             augmented_data_X = np.copy(data_X)
             augmented_data_Y = np.copy(data_Y)
             for i in range(self.n):
+                #generate random warping matrix
                 W,V = self.random_w_and_v(data_X.shape[-1], data_X.shape[-1])
+                #augment all base time series
                 augmented_tmp_X= np.linalg.inv(V).dot(W).dot(data_X.T).T
+                #append augmented data to base time series
                 augmented_data_X= np.vstack((augmented_tmp_X,augmented_data_X))
                 augmented_data_Y= np.hstack((data_Y,augmented_data_Y))
             return augmented_data_X, augmented_data_Y
